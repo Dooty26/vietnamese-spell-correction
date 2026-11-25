@@ -23,3 +23,4 @@ outputs/predictions/*
 
 # Tài liệu đề bài của môn học
 Slide_YC/
+outputs/*.zip

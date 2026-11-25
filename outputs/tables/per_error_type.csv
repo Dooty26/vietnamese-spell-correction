@@ -1,4 +1,10 @@
 model,dataset,error_type,n,det_r,cor_r
+bartpho_v1unk,syn_test,acronym,26,0.9615,0.9615
+bartpho_v1unk,syn_test,edit_distance,441,0.907,0.8707
+bartpho_v1unk,syn_test,fat_finger,4165,0.9726,0.9373
+bartpho_v1unk,syn_test,region,3058,0.9608,0.9493
+bartpho_v1unk,syn_test,teencode,111,0.955,0.9369
+bartpho_v1unk,syn_test,telex,3371,0.9982,0.9647
 identity,syn_test,acronym,26,0.0,0.0
 identity,syn_test,edit_distance,441,0.0,0.0
 identity,syn_test,fat_finger,4165,0.0,0.0

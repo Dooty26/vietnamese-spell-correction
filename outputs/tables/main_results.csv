@@ -1,4 +1,7 @@
 model,dataset,det_p,det_r,det_f1,cor_p,cor_r,cor_f1,sent_acc,over_correction,n_sent,n_errors,n_edits
+bartpho_v1unk,syn_test,0.9193,0.9743,0.946,0.8929,0.9463,0.9188,0.7604,0.1592,5000,11172,11840
+bartpho_v1unk,viwiki_test,0.1314,0.2946,0.1817,0.1146,0.257,0.1585,0.8072,0.139,15432,1541,3455
+bartpho_v1unk,vsec_test,0.7484,0.4101,0.5299,0.6923,0.3794,0.4901,0.327,0.5227,7473,8651,4741
 identity,syn_test,0.0,0.0,0.0,0.0,0.0,0.0,0.1482,0.0,5000,11172,0
 identity,viwiki_test,0.0,0.0,0.0,0.0,0.0,0.0,0.9169,0.0,15432,1541,0
 identity,vsec_test,0.0,0.0,0.0,0.0,0.0,0.0,0.062,0.0,7473,8651,0
