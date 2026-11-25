@@ -31,11 +31,14 @@ report/       kế hoạch, dàn ý báo cáo, hình
 ```
 
 ## Cài đặt
+Python 3.12.
 ```bash
+git clone https://github.com/Dooty26/vietnamese-spell-correction.git
+cd vietnamese-spell-correction
 pip install -r requirements.txt
 pip install -e .
 ```
-KenLM cần môi trường Linux (Colab/Kaggle). Trên Windows nên dùng WSL hoặc chỉ chạy phần không cần KenLM.
+Mô hình A dùng LM n-gram tự cài (không cần KenLM), chạy được trên Windows/Linux bằng CPU. Mô hình C cần GPU (Kaggle/Colab): xem `notebooks/04_bartpho.ipynb`.
 
 ## Chạy lại từ đầu
 ```bash
