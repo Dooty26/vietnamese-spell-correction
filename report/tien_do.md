@@ -37,7 +37,7 @@ Ký hiệu: 🤖 Claude làm được trên máy này · 🧑 cần người ch�
 
 ### Đợt 1: chạy song song được (không đụng file của nhau)
 
-**S0. Git + môi trường** 🤖 ⏱ 30 phút. *Làm trước tiên, để các phiên sau có worktree riêng.*
+**S0. Git + môi trường** ✅ *(25/11: đã git init, commit đầu, ghim requirements; còn push GitHub, chờ tên repo)* 🤖 ⏱ 30 phút. *Làm trước tiên, để các phiên sau có worktree riêng.*
 - Việc: `git init`; rà `.gitignore` (không commit `data/`, `outputs/checkpoints/`, `outputs/predictions/`); ghim `requirements.txt` theo `pip freeze` và bỏ dòng `kenlm`; commit đầu tiên; tạo repo GitHub và push (🧑 xác nhận tên repo).
 - Xong khi: `git status` sạch; `pip install -e . && pytest` pass trên môi trường mới.
 
