@@ -12,10 +12,46 @@ import json
 import math
 from pathlib import Path
 
-from vspell.normalize import normalize
+import re
+import unicodedata
+
+from vspell.normalize import normalize, parse_syllable, split_tone
 from vspell.utils import get_logger, read_jsonl
 
 log = get_logger()
+
+# ---------------------------------------------------------------- kiểu đặt dấu cho tokenizer
+
+_WORD_RE = re.compile(r"[^\W\d_]+")
+_NEW_STYLE_NUCLEI = {"oa", "oe", "uy"}
+
+
+def _new_style_word(word: str) -> str:
+    base, tone = split_tone(word)
+    if tone is None:
+        return word
+    parts = parse_syllable(base.lower())
+    if parts is None or parts[2] or parts[1] not in _NEW_STYLE_NUCLEI:
+        return word
+    i = len(parts[0]) + 1  # nguyên âm thứ hai của "oa"/"oe"/"uy" (âm tiết mở)
+    return base[:i] + unicodedata.normalize("NFC", unicodedata.normalize("NFD", base[i]) + tone) + base[i + 1:]
+
+
+def to_bartpho_style(text: str) -> str:
+    """Đổi dấu thanh của vần mở "oa/oe/uy" sang kiểu mới ("hòa" -> "hoà", "thủy" -> "thuỷ", "khỏe" -> "khoẻ").
+
+    Từ điển sentencepiece của vinai/bartpho-syllable không có kiểu cũ: "hòa", "thỏa", "khóa", "tùy", "ủy",
+    "khỏe"... đều thành <unk> (~0,35% âm tiết của VSEC/Syn-val), mô hình không sinh lại được và bị xóa khi
+    giải mã. Chỉ dùng cho đầu vào tokenizer; đầu ra qua `normalize` để trở lại quy ước chấm điểm.
+    """
+    return _WORD_RE.sub(lambda m: _new_style_word(m.group(0)), text)
+
+
+def postprocess(src: str, text: str) -> str:
+    """Đầu ra mô hình -> quy ước chấm điểm. Tokenizer đổi "…" thành "...": trả lại nếu câu vào có "…"."""
+    if "…" in src and "..." in text:
+        text = text.replace("...", "…")
+    return normalize(text)
 
 
 # ---------------------------------------------------------------- dữ liệu
@@ -42,8 +78,9 @@ def build_datasets(train_path: str, val_path: str, tokenizer, config: dict):
     max_tgt = config.get("max_target_length", 128)
 
     def tokenize(batch):
-        enc = tokenizer(batch["src"], max_length=max_src, truncation=True)
-        enc["labels"] = tokenizer(text_target=batch["tgt"], max_length=max_tgt, truncation=True)["input_ids"]
+        enc = tokenizer([to_bartpho_style(x) for x in batch["src"]], max_length=max_src, truncation=True)
+        enc["labels"] = tokenizer(text_target=[to_bartpho_style(x) for x in batch["tgt"]], max_length=max_tgt,
+                                  truncation=True)["input_ids"]
         return enc
 
     out = []
@@ -229,7 +266,7 @@ class BartphoCorrector:
         out: list[str | None] = [None] * len(srcs)
         for start in tqdm(range(0, len(order), batch_size), desc="bartpho", unit="batch"):
             idx = order[start:start + batch_size]
-            batch = [srcs[i] for i in idx]
+            batch = [to_bartpho_style(srcs[i]) for i in idx]
             enc = self.tokenizer(batch, max_length=self.max_length, truncation=True,
                                  padding=True, return_tensors="pt").to(self.device)
             max_new = int(enc["input_ids"].shape[1] * self.len_ratio) + self.len_extra
@@ -237,5 +274,5 @@ class BartphoCorrector:
                 gen = self.model.generate(**enc, num_beams=self.num_beams, max_new_tokens=max_new,
                                           early_stopping=True)
             for i, text in zip(idx, self.tokenizer.batch_decode(gen, skip_special_tokens=True)):
-                out[i] = normalize(text) if text.strip() else srcs[i]  # câu rỗng -> giữ nguyên câu vào
+                out[i] = postprocess(srcs[i], text) if text.strip() else srcs[i]  # câu rỗng -> giữ nguyên câu vào
         return out  # type: ignore[return-value]

@@ -90,3 +90,14 @@ def test_train_and_correct(tmp_path, tiny_model):
     assert len(out) == len(sents) and all(isinstance(o, str) and o for o in out)
     from vspell.normalize import normalize
     assert all(o == normalize(o) for o in out)
+
+
+def test_to_bartpho_style_and_postprocess():
+    from vspell.models.bartpho import postprocess, to_bartpho_style
+    from vspell.normalize import normalize
+
+    s = "Hòa thỏa khỏe Thụy tùy ủy hoàng toán quý của mùa người khuỷu Khóa"
+    assert to_bartpho_style(s) == "Hoà thoả khoẻ Thuỵ tuỳ uỷ hoàng toán quý của mùa người khuỷu Khoá"
+    assert normalize(to_bartpho_style(s)) == s
+    assert postprocess("a…", "a...") == "a…"
+    assert postprocess("a...", "a...") == "a..."

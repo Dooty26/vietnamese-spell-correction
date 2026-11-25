@@ -82,7 +82,7 @@ Ký hiệu: 🤖 Claude làm được trên máy này · 🧑 cần người ch�
 
 ### Đợt 2: phụ thuộc S1
 
-**S2. Huấn luyện C trên GPU** ⏳ *(25/11 ~12:30: đang chạy Kaggle version `bartpho-150k-3ep`, notebook `dooty26/notebook1296494896`, dataset private `dooty26/vspell-data`; 2×T4, ~1,1 bước/s, 14.064 bước ≈ 3,5 giờ + predict)* 🧑 (+🤖 hỗ trợ đọc log) ⏱ khoảng 3–5 giờ GPU
+**S2. Huấn luyện C trên GPU** ⏳ *(25/11: v1 hết đĩa ở bước 2000 → sửa `save_only_model`; v2 chạy xong (5,6 giờ) nhưng phát hiện lỗi tokenizer: kiểu dấu cũ "hòa/thỏa/khỏe/tùy/ủy" là `<unk>` trong BARTpho → mô hình xóa các âm tiết đó (VSEC over-correction 0,52). Đã sửa (`to_bartpho_style`), kết quả v2 giữ với tag `bartpho_v1unk`; cần train lại v3)* 🧑 (+🤖 hỗ trợ đọc log) ⏱ khoảng 3–5 giờ GPU
 - Chạy `notebooks/04_bartpho.ipynb` trên Kaggle/Colab với 150k cặp, 3 epoch.
 - Tải về `outputs/predictions/bartpho__{syn_test,vsec_test,viwiki_test}.jsonl`. Checkpoint để trên Kaggle/Drive, không đưa vào git.
 - Nếu làm S3: train thêm 3 mô hình 50k, 1 epoch, rồi predict trên VSEC-test, gắn tag `bartpho_d05`, `bartpho_d12`, `bartpho_d25`.
