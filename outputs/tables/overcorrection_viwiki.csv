@@ -1,0 +1,25 @@
+metric,value,note
+n_edits,3404,số vị trí A thay đổi
+n_gold_errors,1541,số lỗi thật
+sua_dung,751,
+sua_sai,127,
+bo_sot,663,
+sua_qua_tay,2526,74.2% số vị trí bị sửa
+cor_p,0.2206,
+cor_r,0.4873,
+cor_f1,0.3037,
+over_so_ky_hieu,0,0.0% ca sửa quá tay; tỉ lệ nền trong token src: 13.3%; trong lỗi thật: 1.8%
+over_rate_so_ky_hieu,0.0,xác suất một token thuộc nhóm bị sửa quá tay
+over_ten_rieng,520,20.6% ca sửa quá tay; tỉ lệ nền trong token src: 10.8%; trong lỗi thật: 8.6%
+over_rate_ten_rieng,0.00909,xác suất một token thuộc nhóm bị sửa quá tay
+over_ngoai_tu_dien,873,34.6% ca sửa quá tay; tỉ lệ nền trong token src: 1.4%; trong lỗi thật: 17.7%
+over_rate_ngoai_tu_dien,0.11984,xác suất một token thuộc nhóm bị sửa quá tay
+over_tu_thuong,1133,44.9% ca sửa quá tay; tỉ lệ nền trong token src: 74.5%; trong lỗi thật: 72.0%
+over_rate_tu_thuong,0.00288,xác suất một token thuộc nhóm bị sửa quá tay
+syn_test_over_per_clean_token,0.00279,lỗi thật/token = 0.0373; sửa quá tay/lỗi thật = 0.07
+vsec_test_over_per_clean_token,0.00329,lỗi thật/token = 0.0351; sửa quá tay/lỗi thật = 0.09
+viwiki_test_over_per_clean_token,0.0048,lỗi thật/token = 0.0029; sửa quá tay/lỗi thật = 1.64
+neu_bo_qua_ten_rieng,0.339,F1 nếu không sửa nhóm này: P=0.261 R=0.483 (mất 6 sửa đúng)
+neu_bo_qua_ten_rieng+ngoai_tu_dien,0.3634,F1 nếu không sửa nhóm này: P=0.338 R=0.393 (mất 145 sửa đúng)
+neu_bo_qua_ten_rieng+ngoai_tu_dien+so_ky_hieu,0.3634,F1 nếu không sửa nhóm này: P=0.338 R=0.393 (mất 145 sửa đúng)
+top_overcorrections,manga→mang (29); Nero→Nào (18); kỉ→kỷ (15); Gin→Giá (15); Nero→Neo (15); Khun→Khu (15); c→có (14); lb→lễ (13); and→anh (13); bạn→bàn (13); điốt→điểm (12); biến→tiến (10); trưởng→trường (10); Mao→Mai (10); Thự→Thọ (10),
