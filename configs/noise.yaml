@@ -1,0 +1,18 @@
+seed: 42
+syllable_error_rate: 0.05    # mặc định gần VSEC (~3,5% từ lỗi); ablation: 0.05 / 0.12 / 0.25
+clean_sentence_ratio: 0.15   # tỉ lệ câu giữ nguyên (dạy mô hình không sửa quá tay)
+keep_syllable_count: true    # chỉ sinh lỗi bên trong âm tiết (1-1 âm tiết)
+
+# Tỉ lệ loại lỗi theo arXiv 2405.02573
+error_type_weights:
+  region: 0.31        # vùng miền: s/x, tr/ch, r/d/gi, l/n, -n/-ng, -t/-c, hỏi/ngã
+  telex: 0.30         # lỗi gõ Telex: aa, dd, w, s/f/r/x/j sai vị trí
+  fat_finger: 0.30    # trượt phím lân cận QWERTY
+  teencode: 0.03
+  acronym: 0.03
+  edit_distance: 0.03 # chèn/xóa/đổi/hoán vị ký tự ngẫu nhiên
+
+skip_tokens:          # không làm nhiễu các token này
+  - numbers
+  - punctuation
+  - capitalized_foreign

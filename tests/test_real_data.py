@@ -1,0 +1,57 @@
+from vspell.data.viwiki import parse_viwiki_doc, sentence_spans
+from vspell.data.vsec import parse_vsec_record, split_dev_test
+
+
+def _ann(tokens_fixes):
+    return {
+        "text": " ".join(t for t, _ in tokens_fixes),
+        "annotations": [
+            {"id": i + 1, "current_syllable": t, "is_correct": f is None,
+             "alternative_syllables": [] if f is None else (f if isinstance(f, list) else [f])}
+            for i, (t, f) in enumerate(tokens_fixes)
+        ],
+    }
+
+
+def test_vsec_basic_and_split_syllable():
+    raw = _ann([("Tuy", None), ("nh", ""), ("iên,", "nhiên,"), ("chiến", None), ("lược", None),
+                ("đều", "điều"), ("chỉnh", None)])
+    r = parse_vsec_record(raw, 0)
+    assert r["src"] == "Tuy nh iên, chiến lược đều chỉnh"
+    assert r["tgt"] == "Tuy nhiên, chiến lược điều chỉnh"
+
+
+def test_vsec_repairs_lost_merge_but_keeps_real_deletion():
+    raw = _ann([("Thang", None), ("đo", None), ("lư", ""), ("ờng", ""), ("chất", None),
+                ("về", ""), ("dịch", None), ("vụ", None)])
+    r = parse_vsec_record(raw, 0)
+    assert r["tgt"] == "Thang đo lường chất dịch vụ"
+    assert r["n_repaired"] == 1
+
+
+def test_vsec_multiple_alternatives_keep_first():
+    r = parse_vsec_record(_ann([("sơ", ["cơ", ""]), ("sở", None)]), 0)
+    assert r["tgt"] == "cơ sở"
+    assert r["alternatives"] == {"0": ["cơ", ""]}
+
+
+def test_split_dev_test_deterministic_and_disjoint():
+    recs = [{"id": str(i)} for i in range(100)]
+    d1, t1 = split_dev_test(recs, 0.2, 42)
+    d2, _ = split_dev_test(recs, 0.2, 42)
+    assert d1 == d2 and len(d1) == 20 and len(t1) == 80
+    assert not {r["id"] for r in d1} & {r["id"] for r in t1}
+
+
+def test_viwiki_sentence_split_and_apply_mistakes():
+    text = "Minh Hoàng địng bắt Canh. Năm này hạn hát.\nDòng mới đượcmột câu."
+    doc = {"_id": "1", "text": text, "mistakes": [
+        {"text": "địng", "start_offset": str(text.index("địng")), "suggest": ["định"]},
+        {"text": "hát", "start_offset": str(text.index("hát")), "suggest": ["hán"]},
+        {"text": "đượcmột", "start_offset": str(text.index("đượcmột")), "suggest": ["được một"]},
+    ]}
+    assert len(sentence_spans(text)) == 3
+    recs, dropped = parse_viwiki_doc(doc)
+    assert dropped == 0
+    assert [r["tgt"] for r in recs] == ["Minh Hoàng định bắt Canh.", "Năm này hạn hán.", "Dòng mới được một câu."]
+    assert [r["n_errors"] for r in recs] == [1, 1, 1]

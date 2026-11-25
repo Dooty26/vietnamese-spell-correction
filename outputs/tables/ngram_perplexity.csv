@@ -1,0 +1,6 @@
+name,order,smoothing,train_sentences,vocab,heldout_sentences,perplexity,train_seconds
+o3_kneser_ney,3,kneser_ney,400000,72774,5000,45.89,372.6
+o2_laplace,2,laplace,400000,72774,5000,359.87,207.8
+o2_kneser_ney,2,kneser_ney,400000,72774,5000,94.74,177.7
+o3_laplace,3,laplace,400000,72774,5000,3544.79,209.4
+o4_kneser_ney,4,kneser_ney,400000,72774,5000,39.68,354.2

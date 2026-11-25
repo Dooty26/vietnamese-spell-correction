@@ -1,0 +1,32 @@
+# Mô hình A: noisy channel + LM n-gram tự cài (src/vspell/models/ngram_lm.py, ngram_corrector.py)
+order: 3                     # ablation: 2 / 3 / 4
+smoothing: kneser_ney        # ablation: laplace / kneser_ney
+discount: 0.75               # D của Kneser-Ney
+add_k: 1.0                   # k của Laplace
+min_count: 1                 # từ xuất hiện < min_count lần -> <unk> trong LM
+lexicon_min_count: 3         # âm tiết xuất hiện >= 3 lần mới vào từ điển
+
+candidates:
+  max_edit_distance: 2
+  max_candidates: 20
+  costs:                     # chi phí kênh (log10) theo nguồn ứng viên
+    telex: -0.5
+    skeleton: -1.0
+    confusion: -1.0
+    teencode: -1.0
+    edit1: -1.5
+    edit2: -3.0
+
+decoding:
+  beam_size: 5
+  lm_weight: 1.0
+  oov_penalty: -0.5          # giữ nguyên âm tiết ngoài từ điển (đã chỉnh trên VSEC-dev với o3_kneser_ney)
+  real_word_penalty: -1.5    # thay âm tiết có trong từ điển (đã chỉnh trên VSEC-dev với o3_kneser_ney)
+  real_word_sources: [telex, skeleton, confusion, teencode, edit1]
+
+tuning:                      # lưới tìm trên VSEC-dev (scripts/train_ngram.py --tune)
+  n_sentences: 400
+  oov_penalty: [-0.5, -1.0, -1.5, -3.0]
+  real_word_penalty: [-0.5, -1.0, -1.5, -2.0, -3.0]
+
+output_dir: outputs/checkpoints/ngram

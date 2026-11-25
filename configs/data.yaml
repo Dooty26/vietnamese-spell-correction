@@ -1,0 +1,31 @@
+seed: 42
+
+binhvq:
+  hf_id: vietgpt/binhvq_news_vi
+  # Bản HF không có mã bài báo: chia tập theo ĐOẠN văn (mỗi dòng parquet)
+  max_row_groups: 2000       # giới hạn số row group đọc (mỗi row group 1.000 đoạn, ~600–800 câu sạch)
+  min_syllables: 5
+  max_syllables: 80         # VSEC dài tối đa 70 token; câu báo chí thường 40–70
+  split_sentences:
+    lm_corpus: 400000
+    syn_train: 150000
+    syn_val: 5000
+    syn_test: 5000
+
+vsec:
+  hf_id: nguyenthanhasia/vsec-vietnamese-spell-correction
+  github_raw: https://raw.githubusercontent.com/VSEC2021/VSEC/main/Dataset/VSEC.jsonl
+  dev_ratio: 0.2             # VSEC-dev chỉ dùng chỉnh ngưỡng/beam; còn lại là VSEC-test
+
+viwiki:
+  github: https://github.com/heraclex12/Viwiki-spelling
+  file: spelling_test.json   # chỉ dùng làm test
+
+dedup:
+  ngram: 5                   # n-gram âm tiết để đo gần trùng
+  overlap_threshold: 0.8     # tỉ lệ trùng >= ngưỡng thì loại khỏi Binhvq
+
+paths:
+  raw: data/raw
+  interim: data/interim
+  processed: data/processed

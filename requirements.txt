@@ -1,0 +1,25 @@
+# Python 3.12. Phiên bản ghim theo môi trường đã chạy dữ liệu + mô hình A (Windows, CPU).
+# Nhóm "học sâu" chạy trên Kaggle/Colab: ghim lại theo `pip freeze` sau lần train BARTpho đầu tiên (task S2).
+
+# Dữ liệu, mô hình A, đánh giá
+pyarrow==26.0.1
+fsspec==2026.9.0
+huggingface_hub==2.1.1
+numpy==2.4.4
+pandas==3.0.2
+PyYAML==6.0.3
+tqdm==4.70.1
+scikit-learn==1.9.1
+
+# Hình, test
+matplotlib==3.10.8
+seaborn==0.13.2
+pytest==9.1.1
+
+# Học sâu (mô hình C) và demo
+torch>=2.2
+transformers>=4.41
+datasets>=2.19
+accelerate>=0.30
+sentencepiece
+gradio>=4.0

@@ -1,0 +1,25 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+.venv/
+venv/
+.env
+
+# Dữ liệu và checkpoint lớn: tải/tái tạo bằng scripts/
+data/raw/*
+data/interim/*
+data/processed/*
+!data/**/.gitkeep
+outputs/checkpoints/*
+!outputs/checkpoints/.gitkeep
+*.arpa
+*.binary
+
+# Dự đoán (lớn, tái tạo bằng scripts/predict.py); giữ outputs/tables và outputs/figures
+outputs/predictions/*
+!outputs/predictions/.gitkeep
+*.log
+
+# Tài liệu đề bài của môn học
+Slide_YC/
