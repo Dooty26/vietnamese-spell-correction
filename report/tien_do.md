@@ -16,16 +16,18 @@
 | Ablation A | Bậc 2/3/4 × Laplace/KN; perplexity | `outputs/tables/ngram_perplexity.csv` |
 | Test | 65 test pass | `tests/` |
 
+**Phát hiện mới (S5a):** sửa quá tay trên Viwiki chủ yếu do lỗi thật quá ít (0,29%): tỉ lệ sửa quá tay trên token sạch 0,48% (VSEC 0,33%), nhưng bằng 1,64× số lỗi thật. 45% là từ thường, 35% ngoài từ điển (manga→mang), 21% tên riêng. Nghi chuẩn hóa chưa gộp biến thể i/y (`kỉ→kỷ` 15 lần), cần kiểm tra.
+
 ## 2. Chưa xong (so với yêu cầu bài tập lớn)
 
-- [ ] **Mô hình C (BARTpho)**: mới có stub. *Đây là việc nằm trên đường găng.*
+- [~] **Mô hình C (BARTpho)**: code xong, **chờ train GPU (S2)**. *Đường găng.*
 - [ ] Ablation C (mật độ nhiễu 5/12/25%)
 - [ ] Bảng so sánh A vs C
-- [ ] 5–10 ví dụ phân tích lỗi, hình cho báo cáo
-- [ ] Demo Gradio (stub)
+- [~] Ví dụ lỗi và hình cho A đã có (chọn bản cuối A vs C: S5b)
+- [x] Demo Gradio với A (còn gắn BARTpho: S6b)
 - [ ] Báo cáo PDF 20–30 trang (mới có dàn ý)
 - [ ] README tái lập đầy đủ; ghim phiên bản `requirements.txt` (bỏ dòng `kenlm`, vì không còn dùng)
-- [ ] GitHub (thư mục chưa phải git repo)
+- [~] Git: đã có repo cục bộ, **chưa push GitHub** (cần trước S2 vì notebook clone repo)
 - [ ] Slide và demo 10 phút
 - [ ] (Tùy chọn) Mô hình B (BiLSTM); giảm sửa quá tay của A trên Viwiki
 
@@ -41,7 +43,7 @@ Ký hiệu: 🤖 Claude làm được trên máy này · 🧑 cần người ch�
 - Việc: `git init`; rà `.gitignore` (không commit `data/`, `outputs/checkpoints/`, `outputs/predictions/`); ghim `requirements.txt` theo `pip freeze` và bỏ dòng `kenlm`; commit đầu tiên; tạo repo GitHub và push (🧑 xác nhận tên repo).
 - Xong khi: `git status` sạch; `pip install -e . && pytest` pass trên môi trường mới.
 
-**S1. Cài mô hình C (BARTpho), phần code** 🤖 ⏱ 1 phiên
+**S1. Cài mô hình C (BARTpho), phần code** ✅ *(chạy thử CPU OK; chọn checkpoint theo eval_loss)* 🤖 ⏱ 1 phiên
 - File: `src/vspell/models/bartpho.py`, `scripts/train_bartpho.py`, `configs/bartpho.yaml`, `notebooks/04_bartpho.ipynb`, `tests/test_bartpho.py`.
 - Việc:
   - `build_datasets` (tokenize src→input_ids, tgt→labels, max_len 128);
@@ -50,12 +52,12 @@ Ký hiệu: 🤖 Claude làm được trên máy này · 🧑 cần người ch�
   - notebook Kaggle: clone repo → cài → train → predict 3 tập test → nén prediction để tải về.
 - Xong khi: chạy thử trên CPU với 200 cặp và vài bước train ra checkpoint, `predict.py --model bartpho --limit 20` chạy được, test pass.
 
-**S3. Dữ liệu ablation mật độ nhiễu** 🤖 ⏱ 30 phút *(tùy chọn, xem cảnh báo)*
+**S3. Dữ liệu ablation mật độ nhiễu** ✅ *(syn_train_d05/d12/d25 trong data/processed; tỉ lệ thực 5,2/12,1/25,1%)* 🤖 ⏱ 30 phút *(tùy chọn, xem cảnh báo)*
 - File: `data/processed/syn_train_d{05,12,25}.jsonl` (50k câu mỗi file), ghi chú cách sinh vào README.
 - Việc: `gen_noise.py --input clean_syn_train.txt --limit 50000 --error-rate {0.05,0.12,0.25}` với cùng seed.
 - Xong khi: có 3 file và `.stats.json` đi kèm, mật độ lỗi thực tế khớp tham số.
 
-**S5a. Phân tích lỗi và hình, phần mô hình A** 🤖 ⏱ 1 phiên
+**S5a. Phân tích lỗi và hình, phần mô hình A** ✅ *(8 hình, error_examples.md, overcorrection_viwiki.csv)* 🤖 ⏱ 1 phiên
 - File: `scripts/analyze_errors.py` (mới), `notebooks/01_eda.ipynb`, `notebooks/05_eval_analysis.ipynb`, `outputs/figures/`, `outputs/tables/`.
 - Việc:
   - **Hình EDA:** phân bố độ dài câu, mật độ lỗi của 3 tập, phân bố loại lỗi.
@@ -64,12 +66,12 @@ Ký hiệu: 🤖 Claude làm được trên máy này · 🧑 cần người ch�
   - **Script dùng lại được:** khi có `bartpho__*.jsonl`, chạy lại là ra bảng A vs C.
 - Xong khi: các file hình trong `outputs/figures/` và `outputs/tables/error_examples.md`.
 
-**S6a. Demo Gradio, phần mô hình A** 🤖 ⏱ 1 phiên
+**S6a. Demo Gradio, phần mô hình A** ✅ 🤖 ⏱ 1 phiên
 - File: `demo/app.py`, `README.md` (mục demo).
 - Việc: ô nhập câu → chọn mô hình → `gr.HighlightedText` tô âm tiết bị sửa (dùng `eval.align.edit_positions`) → bảng ứng viên. Nạp BARTpho nếu có `--bartpho-checkpoint`. Thêm vài câu ví dụ có sẵn.
 - Xong khi: `python demo/app.py` mở được trên localhost và sửa đúng câu ví dụ.
 
-**S7a. Báo cáo, các phần không phụ thuộc C** 🤖 ⏱ 1–2 phiên
+**S7a. Báo cáo, các phần không phụ thuộc C** ✅ *(report/bao_cao.md; chưa xuất PDF: cần pandoc)* 🤖 ⏱ 1–2 phiên
 - File: `report/bao_cao.md` (sau xuất PDF), `report/figures/`.
 - Việc: viết mục 1 Giới thiệu, 2 Dữ liệu (lấy số liệu từ `stats_*.json`), 3 Phương pháp (A đầy đủ, C theo thiết kế), 4 Thực nghiệm. Kết quả A và ablation A đặt vào mục 5. Thêm phụ lục sử dụng AI.
 - Ghi rõ các hạn chế:
