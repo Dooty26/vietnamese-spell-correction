@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 560" width="980" height="560" font-family="Times New Roman, serif" font-size="14">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#333"/>
+    </marker>
+    <style>
+      .src{fill:#e8f0fb;stroke:#3a6ea5;stroke-width:1.2}
+      .proc{fill:#ffffff;stroke:#555;stroke-width:1.2}
+      .set{fill:#eef7ea;stroke:#4a8a3a;stroke-width:1.2}
+      .mod{fill:#fdf1e3;stroke:#c07a20;stroke-width:1.5}
+      .ev{fill:#f4ecf8;stroke:#7a4a9a;stroke-width:1.5}
+      .ln{stroke:#333;stroke-width:1.2;fill:none;marker-end:url(#ar)}
+      .dash{stroke:#c07a20;stroke-width:1.2;fill:none;stroke-dasharray:5 4;marker-end:url(#ar)}
+      .t{text-anchor:middle;fill:#111}
+      .b{font-weight:bold}
+      .grp{fill:none;stroke:#999;stroke-dasharray:3 3}
+      .gt{fill:#666;font-size:13;font-style:italic}
+    </style>
+  </defs>
+  <rect x="0" y="0" width="980" height="560" fill="#ffffff"/>
+
+  <!-- nhóm -->
+  <rect class="grp" x="8" y="22" width="680" height="440" rx="8"/>
+  <text class="gt" x="18" y="16">(1) Dữ liệu và tiền xử lý</text>
+  <rect class="grp" x="704" y="22" width="268" height="300" rx="8"/>
+  <text class="gt" x="714" y="16">(2) Mô hình</text>
+  <rect class="grp" x="560" y="476" width="412" height="78" rx="8"/>
+  <text class="gt" x="570" y="471">(3) Đánh giá chung</text>
+
+  <!-- nguồn -->
+  <rect class="src" x="20" y="40" width="170" height="54" rx="6"/>
+  <text class="t b" x="105" y="62">Binhvq news</text>
+  <text class="t" x="105" y="82">706.360 đoạn văn</text>
+
+  <rect class="src" x="20" y="250" width="170" height="54" rx="6"/>
+  <text class="t b" x="105" y="272">VSEC</text>
+  <text class="t" x="105" y="292">9.341 câu, lỗi thật</text>
+
+  <rect class="src" x="20" y="380" width="170" height="54" rx="6"/>
+  <text class="t b" x="105" y="402">Viwiki-spelling</text>
+  <text class="t" x="105" y="422">107 bài Wikipedia</text>
+
+  <!-- xử lý -->
+  <rect class="proc" x="230" y="34" width="200" height="66" rx="6"/>
+  <text class="t b" x="330" y="56">Làm sạch, lọc câu</text>
+  <text class="t" x="330" y="74">NFC, kiểu đặt dấu cũ,</text>
+  <text class="t" x="330" y="91">loại trùng (sha1)</text>
+
+  <rect class="proc" x="230" y="150" width="200" height="66" rx="6"/>
+  <text class="t b" x="330" y="172">Blocklist chống rò rỉ</text>
+  <text class="t" x="330" y="190">sha1 câu + tỉ lệ 5-gram</text>
+  <text class="t" x="330" y="207">trùng ≥ 0,8</text>
+
+  <rect class="set" x="230" y="250" width="200" height="54" rx="6"/>
+  <text class="t b" x="330" y="272">VSEC-dev 1.868</text>
+  <text class="t" x="330" y="292">VSEC-test 7.473 (seed 42)</text>
+
+  <rect class="set" x="230" y="380" width="200" height="54" rx="6"/>
+  <text class="t b" x="330" y="402">Viwiki-test</text>
+  <text class="t" x="330" y="422">15.432 câu (tách câu)</text>
+
+  <rect class="proc" x="470" y="34" width="200" height="66" rx="6"/>
+  <text class="t b" x="570" y="56">Chia theo đoạn văn</text>
+  <text class="t" x="570" y="74">571.200 câu sạch</text>
+  <text class="t" x="570" y="91">(seed 42)</text>
+
+  <rect class="set" x="470" y="140" width="200" height="50" rx="6"/>
+  <text class="t b" x="570" y="160">LM-corpus</text>
+  <text class="t" x="570" y="179">400.000 câu</text>
+
+  <rect class="set" x="470" y="220" width="200" height="50" rx="6"/>
+  <text class="t b" x="570" y="240">Câu sạch Syn</text>
+  <text class="t" x="570" y="259">train 150k · val 5k · test 5k</text>
+
+  <rect class="proc" x="470" y="300" width="200" height="70" rx="6"/>
+  <text class="t b" x="570" y="322">Sinh nhiễu</text>
+  <text class="t" x="570" y="340">6 loại lỗi, 5% âm tiết,</text>
+  <text class="t" x="570" y="358">15% câu giữ sạch</text>
+
+  <!-- mô hình -->
+  <rect class="mod" x="720" y="60" width="240" height="96" rx="6"/>
+  <text class="t b" x="840" y="82">A: noisy channel + n-gram</text>
+  <text class="t" x="840" y="101">LM bậc 3 Kneser-Ney (tự cài)</text>
+  <text class="t" x="840" y="119">ứng viên: Telex, bỏ dấu, dễ nhầm,</text>
+  <text class="t" x="840" y="137">teencode, SymSpell; beam 5</text>
+
+  <rect class="mod" x="720" y="220" width="240" height="80" rx="6"/>
+  <text class="t b" x="840" y="242">C: BARTpho-syllable</text>
+  <text class="t" x="840" y="261">fine-tune seq2seq</text>
+  <text class="t" x="840" y="280">câu lỗi → câu đúng</text>
+
+  <!-- đánh giá -->
+  <rect class="ev" x="575" y="486" width="385" height="58" rx="6"/>
+  <text class="t b" x="767" y="508">Chuẩn hóa → căn chỉnh âm tiết (difflib)</text>
+  <text class="t" x="767" y="528">Det/Cor P-R-F1 · sent acc · tỉ lệ sửa quá tay</text>
+
+  <!-- mũi tên -->
+  <path class="ln" d="M190,67 L228,67"/>
+  <path class="ln" d="M430,67 L468,67"/>
+  <path class="ln" d="M190,277 L228,277"/>
+  <path class="ln" d="M190,407 L228,407"/>
+  <path class="ln" d="M300,250 L300,218"/>
+  <path class="ln" d="M215,407 L215,183 L228,183"/>
+  <path class="ln" d="M330,150 L330,102"/>
+  <path class="ln" d="M570,100 L570,138"/>
+  <path class="ln" d="M455,100 L455,245 L468,245"/>
+  <path class="ln" d="M570,270 L570,298"/>
+  <path class="ln" d="M670,165 L695,165 L695,108 L718,108"/>
+  <path class="ln" d="M670,335 L700,335 L700,260 L718,260"/>
+  <path class="dash" d="M430,262 L450,262 L450,206 L700,206 L700,140 L718,140"/>
+  <text x="470" y="202" font-size="11" fill="#c07a20">chỉnh tham số trên VSEC-dev</text>
+  <path class="ln" d="M960,108 L970,108 L970,470 L860,470 L860,484"/>
+  <path class="ln" d="M840,300 L840,484"/>
+  <path class="ln" d="M330,434 L330,515 L573,515"/>
+  <path class="ln" d="M430,290 L445,290 L445,500 L573,500"/>
+  <text x="250" y="458" font-size="12" fill="#555">tập kiểm tra lỗi thật</text>
+  <path class="ln" d="M500,370 L500,530 L573,530"/>
+  <text x="506" y="455" font-size="12" fill="#555">Syn-test</text>
+</svg>
