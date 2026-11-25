@@ -20,8 +20,8 @@
 
 ## 2. Chưa xong (so với yêu cầu bài tập lớn)
 
-- [~] **Mô hình C (BARTpho)**: code xong, **chờ train GPU (S2)**. *Đường găng.*
-- [ ] Ablation C (mật độ nhiễu 5/12/25%)
+- [x] **Mô hình C (BARTpho)**: v3 xong 26/11 (Kaggle 2×T4, 5,6 giờ). VSEC cor_f1 0,536, over-correction 0,026; Syn-test cor_f1 0,959; Viwiki cor_f1 0,240.
+- [x] Ablation C (mật độ nhiễu 5/12/25%, 50k cặp × 1 epoch, Colab): VSEC cor_f1 0,572 / 0,622 / 0,624. Cả 3 đều cao hơn mô hình đầy đủ (150k × 3 epoch, 0,536) → train lâu trên dữ liệu tổng hợp làm giảm khả năng chuyển sang lỗi thật (recall 0,38 so với 0,48).
 - [ ] Bảng so sánh A vs C
 - [~] Ví dụ lỗi và hình cho A đã có (chọn bản cuối A vs C: S5b)
 - [x] Demo Gradio với A (còn gắn BARTpho: S6b)
@@ -82,7 +82,7 @@ Ký hiệu: 🤖 Claude làm được trên máy này · 🧑 cần người ch�
 
 ### Đợt 2: phụ thuộc S1
 
-**S2. Huấn luyện C trên GPU** ⏳ *(25/11: v1 hết đĩa ở bước 2000 → sửa `save_only_model`; v2 chạy xong (5,6 giờ) nhưng phát hiện lỗi tokenizer: kiểu dấu cũ "hòa/thỏa/khỏe/tùy/ủy" là `<unk>` trong BARTpho → mô hình xóa các âm tiết đó (VSEC over-correction 0,52). Đã sửa (`to_bartpho_style`), kết quả v2 giữ với tag `bartpho_v1unk`. v3: Kaggle xếp hàng quá lâu → hủy, chuyển sang Colab (1×T4, ~2,7 bước/s, ~1,5–2 giờ; 25/11 ~22:35 bắt đầu train, commit `93630b6`). Colab tự tải `bartpho_predictions.zip` khi xong; phải giữ tab và máy mở)* 🧑 (+🤖 hỗ trợ đọc log) ⏱ khoảng 3–5 giờ GPU
+**S2. Huấn luyện C trên GPU** ✅ *(v1 hết đĩa → `save_only_model`; v2 lỗi `<unk>` với kiểu dấu cũ (tag `bartpho_v1unk`, VSEC over-correction 0,52) → sửa `to_bartpho_style`; v3: Colab bị ngắt ở bước 3325, bản dự phòng Kaggle 2×T4 chạy xong 26/11 (20.1k giây). Ablation C chạy song song trên Colab)* 🧑 (+🤖 hỗ trợ đọc log) ⏱ khoảng 3–5 giờ GPU
 - Chạy `notebooks/04_bartpho.ipynb` trên Kaggle/Colab với 150k cặp, 3 epoch.
 - Tải về `outputs/predictions/bartpho__{syn_test,vsec_test,viwiki_test}.jsonl`. Checkpoint để trên Kaggle/Drive, không đưa vào git.
 - Nếu làm S3: train thêm 3 mô hình 50k, 1 epoch, rồi predict trên VSEC-test, gắn tag `bartpho_d05`, `bartpho_d12`, `bartpho_d25`.
