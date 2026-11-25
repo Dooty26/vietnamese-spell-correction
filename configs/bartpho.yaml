@@ -1,18 +1,29 @@
+# Mô hình C: fine-tune vinai/bartpho-syllable (~396M tham số) trên Syn-train
 model_name: vinai/bartpho-syllable
 seed: 42
-max_source_length: 128
+max_source_length: 128          # token; câu dài hơn bị cắt khi train (suy luận cho tới 256)
 max_target_length: 128
-train_size: 150000           # ablation mật độ nhiễu dùng 50000
+train_limit: null               # null = cả 150k cặp; ablation mật độ nhiễu: --limit 50000 --epochs 1
+val_limit: null                 # Syn-val 5k cặp
 num_train_epochs: 3
-per_device_train_batch_size: 32
-per_device_eval_batch_size: 64
+max_steps: null                 # đặt số để chạy thử
+# Batch hiệu dụng 32 = 16 x 2 (vừa 16 GB của T4/P100 với fp16). GPU 24 GB+ có thể đặt 32 x 1.
+per_device_train_batch_size: 16
+gradient_accumulation_steps: 2
+per_device_eval_batch_size: 32
 learning_rate: 5.0e-5
 warmup_ratio: 0.05
 weight_decay: 0.01
-fp16: true
-eval_steps: 2000
-save_steps: 2000
+lr_scheduler_type: linear
+fp16: true                      # chỉ bật khi có GPU
+group_by_length: true
+eval_steps: 1000                # bước tối ưu (sau tích lũy gradient); 150k x 3 / 32 ≈ 14k bước
+save_steps: 1000                # phải là bội của eval_steps
 save_total_limit: 2
-metric_for_best_model: eval_loss   # chọn checkpoint theo Syn-val
-num_beams: 4
+logging_steps: 100
+metric_for_best_model: eval_loss   # chọn checkpoint theo loss Syn-val; "cor_f1" = sinh câu trên gen_eval_size câu (chậm hơn)
+gen_eval_size: 1000
+resume_from_checkpoint: null    # "auto" (--resume) = tiếp tục từ checkpoint-* mới nhất
+report_to: none
+num_beams: 4                    # dùng khi predict
 output_dir: outputs/checkpoints/bartpho
