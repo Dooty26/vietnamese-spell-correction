@@ -20,6 +20,7 @@ group_by_length: true
 eval_steps: 1000                # bước tối ưu (sau tích lũy gradient); 150k x 3 / 32 ≈ 14k bước
 save_steps: 1000                # phải là bội của eval_steps
 save_total_limit: 2
+save_only_model: true           # bỏ optimizer khỏi checkpoint: /kaggle/working chỉ ~20 GB (bản đầu hết đĩa ở bước 2000)
 logging_steps: 100
 metric_for_best_model: eval_loss   # chọn checkpoint theo loss Syn-val; "cor_f1" = sinh câu trên gen_eval_size câu (chậm hơn)
 gen_eval_size: 1000

@@ -136,6 +136,8 @@ def train(config: dict, train_path: str, val_path: str) -> str:
         save_strategy="steps",
         save_steps=config.get("save_steps", 2000),
         save_total_limit=config.get("save_total_limit", 2),
+        # True: checkpoint chỉ gồm trọng số (~1,6 GB thay vì ~4,8 GB có optimizer); không resume được optimizer
+        save_only_model=bool(config.get("save_only_model", False)),
         logging_steps=config.get("logging_steps", 100),
         load_best_model_at_end=True,
         metric_for_best_model=metric,
