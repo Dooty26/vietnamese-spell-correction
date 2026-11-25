@@ -51,6 +51,15 @@ python scripts/evaluate.py --pred-dir outputs/predictions --out outputs/tables/m
 python demo/app.py
 ```
 
+## Ablation mật độ nhiễu
+Ba tập train 50k cặp từ cùng 50k câu đầu của `clean_syn_train.txt`, cùng seed 42, chỉ khác `--error-rate` (5% / 12% / 25% âm tiết hợp lệ bị lỗi). Thống kê: `outputs/tables/noise_density_stats.csv`.
+```bash
+python scripts/gen_noise.py --input data/processed/clean_syn_train.txt --limit 50000 --error-rate 0.05 --seed 42 --output data/processed/syn_train_d05.jsonl
+python scripts/gen_noise.py --input data/processed/clean_syn_train.txt --limit 50000 --error-rate 0.12 --seed 42 --output data/processed/syn_train_d12.jsonl
+python scripts/gen_noise.py --input data/processed/clean_syn_train.txt --limit 50000 --error-rate 0.25 --seed 42 --output data/processed/syn_train_d25.jsonl
+```
+Lưu ý: `errors_per_word` trong `.stats.json` thấp hơn tham số (~0,83×) vì tham số chỉ áp lên âm tiết ứng viên (bỏ số, dấu câu, tên riêng viết hoa) và 15% câu được giữ sạch; trên âm tiết ứng viên của các câu bị nhiễu, tỉ lệ thực tế là 5,2% / 12,1% / 25,1%.
+
 ## Đánh giá
 Detection P/R/F1 và Correction P/R/F1 mức âm tiết, sentence accuracy, tỉ lệ sửa quá tay. Chạy trên Syn-test, VSEC-test, Viwiki-test. Mọi kết quả cố định seed 42.
 
