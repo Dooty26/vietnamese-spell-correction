@@ -1,0 +1,25 @@
+%% Sơ đồ pipeline tổng thể (nguồn Mermaid của report/figures/pipeline.svg)
+flowchart LR
+  subgraph D[Dữ liệu]
+    B[Binhvq news<br/>706.360 đoạn] --> CL[Làm sạch + lọc câu<br/>NFC, kiểu đặt dấu cũ]
+    V[VSEC<br/>9.341 câu] --> N1[Chuẩn hóa]
+    W[Viwiki-spelling<br/>107 bài] --> N2[Tách câu + chuẩn hóa]
+    N1 --> VS[VSEC-dev 1.868<br/>VSEC-test 7.473]
+    N2 --> VW[Viwiki-test 15.432]
+    VS --> BL[Blocklist chống rò rỉ<br/>sha1 câu + 5-gram ≥ 0,8]
+    VW --> BL
+    BL --> CL
+    CL --> SP[Chia theo đoạn văn<br/>571.200 câu]
+    SP --> LM[LM-corpus 400k]
+    SP --> CS[Câu sạch Syn<br/>train 150k / val 5k / test 5k]
+    CS --> NG[Sinh nhiễu<br/>6 loại lỗi, 5% âm tiết,<br/>15% câu sạch]
+  end
+  subgraph M[Mô hình]
+    LM --> A[A: LM n-gram KN<br/>+ ứng viên + beam search]
+    NG --> C[C: BARTpho-syllable<br/>fine-tune seq2seq]
+    VS -. chỉnh tham số .-> A
+  end
+  subgraph E[Đánh giá chung]
+    A --> EV[Căn chỉnh âm tiết difflib<br/>Det/Cor P-R-F1, sent acc,<br/>sửa quá tay]
+    C --> EV
+  end
