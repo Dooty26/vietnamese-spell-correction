@@ -36,6 +36,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from vspell.eval.align import edit_positions, error_positions
+from vspell.eval.metrics import _div, _f1
 from vspell.models.ngram_corrector import osa_distance
 from vspell.normalize import normalize, remove_diacritics, split_syllables, split_tone
 from vspell.utils import get_logger, read_jsonl
@@ -471,16 +472,17 @@ def viwiki_hypothesis(per_sent, model: str, lexicon: set[str], tab_dir: Path) ->
     def add(name, value, note=""):
         rows.append({"metric": name, "value": value, "note": note})
 
-    p = c["sua_dung"] / n_edit
-    r_ = c["sua_dung"] / n_gold
+    # mẫu số có thể bằng 0 (vd mô hình đồng nhất không sửa gì): quy ước 0 như vspell.eval.metrics
+    p = _div(c["sua_dung"], n_edit)
+    r_ = _div(c["sua_dung"], n_gold)
     add("n_edits", n_edit, "số vị trí A thay đổi")
     add("n_gold_errors", n_gold, "số lỗi thật")
     add("sua_dung", c["sua_dung"]), add("sua_sai", c["sua_sai"]), add("bo_sot", c["bo_sot"])
-    add("sua_qua_tay", c["sua_qua_tay"], f"{c['sua_qua_tay'] / n_edit:.1%} số vị trí bị sửa")
-    add("cor_p", round(p, 4)), add("cor_r", round(r_, 4)), add("cor_f1", round(2 * p * r_ / (p + r_), 4))
+    add("sua_qua_tay", c["sua_qua_tay"], f"{_div(c['sua_qua_tay'], n_edit):.1%} số vị trí bị sửa")
+    add("cor_p", round(p, 4)), add("cor_r", round(r_, 4)), add("cor_f1", round(_f1(p, r_), 4))
     for sc in SUB_LABEL:
         add(f"over_{sc}", sub[sc], f"{sub[sc] / max(1, len(over)):.1%} ca sửa quá tay; "
-            f"tỉ lệ nền trong token src: {base[sc] / n_tok:.1%}; "
+            f"tỉ lệ nền trong token src: {_div(base[sc], n_tok):.1%}; "
             f"trong lỗi thật: {gold_sub[sc] / max(1, n_gold):.1%}")
         add(f"over_rate_{sc}", round(sub[sc] / max(1, base[sc]), 5),
             "xác suất một token thuộc nhóm bị sửa quá tay")
@@ -492,8 +494,8 @@ def viwiki_hypothesis(per_sent, model: str, lexicon: set[str], tab_dir: Path) ->
         cc = Counter(x["cat"] for it in it_ for x in it)
         ntok = sum(len(_tok(r["src"])) for r in rr_)
         ng = cc["sua_dung"] + cc["sua_sai"] + cc["bo_sot"]
-        add(f"{ds}_over_per_clean_token", round(cc["sua_qua_tay"] / (ntok - ng), 5),
-            f"lỗi thật/token = {ng / ntok:.4f}; sửa quá tay/lỗi thật = {cc['sua_qua_tay'] / ng:.2f}")
+        add(f"{ds}_over_per_clean_token", round(_div(cc["sua_qua_tay"], ntok - ng), 5),
+            f"lỗi thật/token = {_div(ng, ntok):.4f}; sửa quá tay/lỗi thật = {_div(cc['sua_qua_tay'], ng):.2f}")
     # Phản thực tế: nếu A không động vào token của nhóm -> precision/recall mới
     for excl in [("ten_rieng",), ("ten_rieng", "ngoai_tu_dien"), ("ten_rieng", "ngoai_tu_dien", "so_ky_hieu")]:
         lost_tp = sum(1 for r, it in zip(recs, items) for x in it if x["cat"] == "sua_dung"
@@ -503,8 +505,8 @@ def viwiki_hypothesis(per_sent, model: str, lexicon: set[str], tab_dir: Path) ->
         removed_over = sum(sub[e] for e in excl)
         ne = n_edit - removed_over - lost_tp - lost_wrong
         tp = c["sua_dung"] - lost_tp
-        pp, rr = tp / ne, tp / n_gold
-        add("neu_bo_qua_" + "+".join(excl), round(2 * pp * rr / (pp + rr), 4),
+        pp, rr = _div(tp, ne), _div(tp, n_gold)
+        add("neu_bo_qua_" + "+".join(excl), round(_f1(pp, rr), 4),
             f"F1 nếu không sửa nhóm này: P={pp:.3f} R={rr:.3f} (mất {lost_tp} sửa đúng)")
     # Các token hay bị sửa quá tay nhất
     top = Counter((x["src_tok"], x["pred_str"]) for x in over).most_common(15)

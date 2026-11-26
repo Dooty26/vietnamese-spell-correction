@@ -36,7 +36,7 @@ def test_vsec_multiple_alternatives_keep_first():
 
 
 def test_split_dev_test_deterministic_and_disjoint():
-    recs = [{"id": str(i)} for i in range(100)]
+    recs = [{"id": str(i), "tgt": f"câu {i}"} for i in range(100)]
     d1, t1 = split_dev_test(recs, 0.2, 42)
     d2, _ = split_dev_test(recs, 0.2, 42)
     assert d1 == d2 and len(d1) == 20 and len(t1) == 80
@@ -73,3 +73,13 @@ def test_viwiki_drops_sentences_with_unusable_labels():
     recs, dropped = parse_viwiki_doc(doc, stats=stats)
     assert dropped == 1 and stats["dropped_cross_sentence"] == 1 and stats["dropped_sentences"] == 2
     assert [r["src"] for r in recs] == ["Câu sau hoàn toàn đúng nhé."]  # không còn câu lỗi mang nhãn "sạch"
+
+
+def test_split_dev_test_keeps_same_target_together():
+    recs = [{"id": str(i), "tgt": f"câu {i % 30}."} for i in range(90)]  # mỗi câu đích lặp 3 lần
+    recs.append({"id": "x", "tgt": "Câu  1 !"})  # khác hoa thường/khoảng trắng/dấu câu vẫn là cùng câu đích
+    dev, test = split_dev_test(recs, 0.2, 42)
+    from vspell.data.vsec import target_key
+    norm = lambda r: target_key(r["tgt"])  # noqa: E731
+    assert not {norm(r) for r in dev} & {norm(r) for r in test}
+    assert len(dev) + len(test) == len(recs) and dev and test

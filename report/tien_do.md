@@ -8,7 +8,7 @@
 |---|---|---|
 | Chuẩn hóa | NFC, quy kiểu đặt dấu, tách âm tiết, kiểm tra âm tiết hợp lệ | `src/vspell/normalize.py` |
 | Đánh giá | Căn chỉnh âm tiết; Det/Cor P/R/F1, sent acc, sửa quá tay, recall theo loại lỗi | `src/vspell/eval/`, `scripts/evaluate.py` |
-| Dữ liệu thật | VSEC dev 1.868 / test 7.473 câu; Viwiki test 15.153 câu (tạo lại 26/11 sau khi sửa bộ tách câu) | `data/processed/vsec_*.jsonl`, `viwiki_test.jsonl` |
+| Dữ liệu thật | VSEC dev 1.873 / test 7.468 câu (câu cùng câu đích gom vào một tập, 26/11); Viwiki test 15.153 câu (tạo lại 26/11 sau khi sửa bộ tách câu) | `data/processed/vsec_*.jsonl`, `viwiki_test.jsonl` |
 | Binhvq | 571k câu sạch, đã loại trùng/rò rỉ: LM 400k, train 150k, val 5k, test 5k | `data/processed/lm_corpus.txt`, `clean_syn_*.txt` |
 | Sinh nhiễu | 6 loại lỗi, mật độ 5% âm tiết, 15% câu sạch | `src/vspell/noise/`, `syn_{train,val,test}.jsonl` |
 | **Mô hình A** | Tự cài n-gram LM + noisy channel + beam search; đã chỉnh tham số trên VSEC-dev | `src/vspell/models/ngram_*.py` |

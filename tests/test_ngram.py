@@ -109,3 +109,21 @@ def test_candidates_deterministic_across_hash_seeds():
         outs.add(subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True,
                                 check=True).stdout)
     assert len(outs) == 1
+
+
+def test_s4_ablation_reads_chosen_values_from_checkpoint(tmp_path):
+    import importlib.util
+    import json
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location(
+        "ablate_ngram_s4", Path(__file__).resolve().parents[1] / "scripts" / "ablate_ngram_s4.py")
+    ab = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ab)
+    dec = {"beam_size": 5, "ignore_iy": True, "keep_non_vietnamese": False, "capital_penalty": -1.0,
+           "edit_margin": -0.25}
+    (tmp_path / "config.json").write_text(json.dumps({"decoding": dec}), encoding="utf-8")
+    assert ab.load_chosen(tmp_path) == {k: dec[k] for k in ab.OFF}
+    (tmp_path / "config.json").write_text(json.dumps({"decoding": {"beam_size": 5}}), encoding="utf-8")
+    with pytest.raises(ValueError, match="thiếu tham số S4"):
+        ab.load_chosen(tmp_path)

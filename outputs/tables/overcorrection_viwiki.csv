@@ -17,7 +17,7 @@ over_rate_ngoai_tu_dien,0.11688,xác suất một token thuộc nhóm bị sửa
 over_tu_thuong,1131,45.0% ca sửa quá tay; tỉ lệ nền trong token src: 74.5%; trong lỗi thật: 71.9%
 over_rate_tu_thuong,0.00288,xác suất một token thuộc nhóm bị sửa quá tay
 syn_test_over_per_clean_token,0.00279,lỗi thật/token = 0.0373; sửa quá tay/lỗi thật = 0.07
-vsec_test_over_per_clean_token,0.0033,lỗi thật/token = 0.0351; sửa quá tay/lỗi thật = 0.09
+vsec_test_over_per_clean_token,0.00329,lỗi thật/token = 0.0351; sửa quá tay/lỗi thật = 0.09
 viwiki_test_over_per_clean_token,0.00478,lỗi thật/token = 0.0029; sửa quá tay/lỗi thật = 1.63
 neu_bo_qua_ten_rieng,0.3403,F1 nếu không sửa nhóm này: P=0.263 R=0.483 (mất 6 sửa đúng)
 neu_bo_qua_ten_rieng+ngoai_tu_dien,0.3635,F1 nếu không sửa nhóm này: P=0.338 R=0.393 (mất 145 sửa đúng)

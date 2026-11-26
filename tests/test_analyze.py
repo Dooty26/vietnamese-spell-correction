@@ -60,3 +60,13 @@ def test_comparison_pairs_by_id_not_order():
     bad = [(1, "đều chỉnh", "đều chỉnh", "đều chỉnh"), b[1]]
     with pytest.raises(ValueError, match="khác nhau"):
         ae.comparison_rows({("A", "vsec_test"): _per_sent(a), ("B", "vsec_test"): _per_sent(bad)}, ["A", "B"])
+
+
+def test_viwiki_hypothesis_identity_model_no_zero_division(tmp_path):
+    """Mô hình đồng nhất (không sửa gì) -> n_edits = 0; không được ZeroDivisionError."""
+    rows = [(1, "đều chỉnh giá", "đều chỉnh giá", "điều chỉnh giá"), (2, "trời đẹp", "trời đẹp", "trời đẹp")]
+    ps = {("identity", "viwiki_test"): _per_sent(rows)}
+    out = {r["metric"]: r["value"] for r in ae.viwiki_hypothesis(ps, "identity", LEX, tmp_path)}
+    assert out["n_edits"] == 0 and out["cor_p"] == out["cor_r"] == out["cor_f1"] == 0
+    assert (tmp_path / "overcorrection_viwiki.csv").exists()
+    ae.viwiki_hypothesis({("identity", "viwiki_test"): _per_sent(rows[1:])}, "identity", LEX, tmp_path)  # 0 lỗi thật

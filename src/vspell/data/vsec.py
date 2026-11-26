@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import random
+import re
 import urllib.request
 from pathlib import Path
 
@@ -90,10 +91,27 @@ def load_vsec(source: str | Path) -> list[dict]:
     return records
 
 
+_NON_WORD = re.compile(r"[^\w\s]")
+
+
+def target_key(text: str) -> str:
+    """Khóa gom câu đích trùng nhau: chuẩn hóa, chữ thường, bỏ dấu câu và khoảng trắng thừa."""
+    return " ".join(_NON_WORD.sub(" ", normalize(text).lower()).split())
+
+
 def split_dev_test(records: list[dict], dev_ratio: float, seed: int) -> tuple[list[dict], list[dict]]:
-    """Chia cố định VSEC-dev / VSEC-test (xáo trộn theo seed, giữ thứ tự id trong từng tập)."""
+    """Chia cố định VSEC-dev / VSEC-test (xáo trộn theo seed, giữ thứ tự id trong từng tập).
+
+    Các câu có cùng câu đích (`target_key`: sau `normalize`, không phân biệt hoa thường và dấu câu) luôn nằm cùng một tập: VSEC có
+    những câu đúng giống nhau nhưng mang lỗi khác nhau, nếu tách ra hai tập thì đánh giá sau khi chỉnh tham số
+    trên dev không còn độc lập. Cách làm: xáo trộn và cắt như cũ, rồi nhóm nào đã có câu rơi vào dev thì
+    chuyển cả nhóm sang dev. Nhờ vậy test chỉ bớt đi đúng các câu trùng với dev, mọi câu khác giữ nguyên tập.
+    """
     order = list(range(len(records)))
     random.Random(seed).shuffle(order)
     n_dev = round(len(records) * dev_ratio)
-    dev_idx, test_idx = sorted(order[:n_dev]), sorted(order[n_dev:])
+    key = [target_key(r["tgt"]) for r in records]
+    dev_keys = {key[i] for i in order[:n_dev]}
+    dev_idx = sorted(i for i in order if key[i] in dev_keys)
+    test_idx = sorted(i for i in order if key[i] not in dev_keys)
     return [records[i] for i in dev_idx], [records[i] for i in test_idx]

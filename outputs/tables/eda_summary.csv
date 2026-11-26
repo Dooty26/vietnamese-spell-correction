@@ -1,5 +1,5 @@
 dataset,n_sent,len_mean,len_median,len_max,n_errors,sent_with_error,errors_per_token,errors_per_sent
 syn_test,5000,59.87,62,80,11172,0.8518,0.0373,2.234
-vsec_test,7473,32.94,32,70,8650,0.938,0.0351,1.158
+vsec_test,7468,32.94,32,70,8643,0.938,0.0351,1.157
 viwiki_test,15153,34.83,31,244,1542,0.0845,0.0029,0.102
 syn_train,20000,59.82,62,80,44652,0.8479,0.0373,2.233

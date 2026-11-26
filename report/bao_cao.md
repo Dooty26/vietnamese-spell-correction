@@ -66,7 +66,7 @@ Hệ thống sử dụng ba nguồn dữ liệu với vai trò khác nhau (Bản
 | Tập dữ liệu | Nguồn | Miền | Vai trò | Cách chia |
 |---|---|---|---|---|
 | Binhvq news | `vietgpt/binhvq_news_vi` (Hugging Face) [10] | Tin tức | Từ điển, LM n-gram, nguồn sinh lỗi tổng hợp | LM-corpus 400k câu · Syn-train 150k · Syn-val 5k · Syn-test 5k (chia theo đoạn văn) |
-| VSEC [1] | GitHub `VSEC2021/VSEC` | Tin tức | Lỗi thật: chỉnh tham số và kiểm tra | VSEC-dev 20% (1.868 câu) · VSEC-test 80% (7.473 câu), seed 42 |
+| VSEC [1] | GitHub `VSEC2021/VSEC` | Tin tức | Lỗi thật: chỉnh tham số và kiểm tra | VSEC-dev ~20% (1.873 câu) · VSEC-test ~80% (7.468 câu), seed 42, câu cùng câu đích luôn cùng tập |
 | Viwiki-spelling [2] | GitHub `heraclex12/Viwiki-spelling` (CC BY 4.0) | Wikipedia | Lỗi thật: chỉ kiểm tra | Viwiki-test 15.153 câu |
 
 ### 2.1.1. Binhvq news
@@ -94,7 +94,7 @@ VSEC [1] gồm 9.341 câu tin tức tiếng Việt, mỗi câu được gán nh�
 - **Âm tiết bị tách:** một âm tiết bị gõ thành hai mảnh (*“nh iên,”*) được gán nhãn theo kiểu mảnh đầu thành chuỗi rỗng, mảnh sau thành âm tiết đầy đủ (*“nhiên,”*). Thủ tục căn chỉnh ở mục 4.3 quy các trường hợp này về vị trí âm tiết trong câu nguồn.
 - **Lỗi gán nhãn:** có trường hợp mọi mảnh của âm tiết bị tách đều được gán chuỗi rỗng, làm mất chữ trong câu đích. Hàm `_repair_lost_merges` ghép các mảnh lại khi kết quả là một âm tiết tiếng Việt hợp lệ; trong toàn bộ VSEC có đúng 1 chỗ được sửa theo cách này.
 
-VSEC được chia cố định thành VSEC-dev (20%) dùng để chỉnh tham số giải mã và VSEC-test (80%) dùng để báo cáo kết quả.
+VSEC được chia cố định thành VSEC-dev (20%) dùng để chỉnh tham số giải mã và VSEC-test (80%) dùng để báo cáo kết quả. VSEC có một số câu đúng giống nhau nhưng mang lỗi khác nhau; các câu có cùng câu đích (sau chuẩn hóa, không phân biệt hoa thường và dấu câu) luôn được xếp vào cùng một tập (`split_dev_test`), nhờ đó 5 câu test trùng câu đích với dev được chuyển sang dev. Tham số giải mã chính của A (`oov_penalty`, `real_word_penalty`) được chọn trên bản dev trước khi gom nhóm (ít hơn 5 câu); các luật S4 đã được chỉnh lại trên bản dev mới và chọn đúng cấu hình cũ.
 
 ### 2.1.3. Viwiki-spelling
 
@@ -135,8 +135,8 @@ Bảng 2.3 tóm tắt các tập lỗi thật sau chuẩn hóa (`stats_real.json
 | Tập | Số câu | Câu có lỗi | Số lỗi âm tiết | Mật độ lỗi / token | Độ dài TB (token) | Trung vị | Tối đa |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | VSEC (toàn bộ) | 9.341 | 8.770 | 10.857 | 3,51% | 33,11 | 32 | 70 |
-| VSEC-dev | 1.868 | 1.760 | 2.206 | 3,52% | 33,59 | 33 | 68 |
-| VSEC-test | 7.473 | 7.010 | 8.651 | 3,51% | 33,00 | 32 | 70 |
+| VSEC-dev | 1.873 | 1.765 | 2.213 | 3,52% | 33,60 | 33 | 68 |
+| VSEC-test | 7.468 | 7.005 | 8.643 | 3,51% | 32,99 | 32 | 70 |
 | Viwiki-test | 15.153 | 1.281 | 1.542 | 0,29% | 34,84 | 31 | 244 |
 
 Hai tập lỗi thật khác nhau rất rõ về phân bố. VSEC là tập “dày lỗi”: khoảng 94% số câu có ít nhất một lỗi, trung bình 1,16 lỗi mỗi câu và mật độ 3,5% token. Viwiki là tập “thưa lỗi”: chỉ khoảng 8,3% số câu có lỗi (tức khoảng 92% câu sạch) và mật độ lỗi chỉ 0,29% token, thấp hơn VSEC khoảng 12 lần. Vì vậy, trên Viwiki, chỉ cần mô hình sửa nhầm một tỉ lệ nhỏ trong số câu sạch là độ chính xác (precision) đã giảm mạnh. Hai cách chia VSEC-dev/VSEC-test có phân bố gần như trùng nhau, cho thấy việc chỉnh tham số trên VSEC-dev là đại diện. [chờ hình: `outputs/figures/` – phân bố độ dài câu và mật độ lỗi của ba tập, do task S5a tạo]
@@ -343,7 +343,7 @@ Mỗi mô hình được chấm trên ba tập kiểm tra, đại diện cho ba 
 | Tập | Số câu | Số lỗi | Ý nghĩa |
 |---|---:|---:|---|
 | Syn-test | 5.000 | 11.172 | Cùng phân phối với dữ liệu huấn luyện (lỗi tổng hợp, miền tin tức) |
-| VSEC-test | 7.473 | 8.651 | Lỗi thật, cùng miền tin tức |
+| VSEC-test | 7.468 | 8.643 | Lỗi thật, cùng miền tin tức |
 | Viwiki-test | 15.153 | 1.542 | Lỗi thật, khác miền (Wikipedia), lỗi rất thưa |
 
 Thứ tự này cho phép trả lời CH2: khoảng cách giữa Syn-test và VSEC-test phản ánh sai khác giữa lỗi tổng hợp và lỗi thật; khoảng cách giữa VSEC-test và Viwiki-test phản ánh thêm sai khác về miền văn bản và mật độ lỗi.
@@ -375,7 +375,7 @@ Các chỉ số được tính ở mức vi mô (micro) trên toàn tập. Mọi
 ## 4.4. Quy trình chọn tham số
 
 - **Mô hình A:** cấu trúc mô hình (bậc 3, Kneser-Ney, $D = 0{,}75$, beam 5, chi phí các nguồn ứng viên) được đặt theo kinh nghiệm. Hai tham số ảnh hưởng mạnh nhất đến cân bằng precision/recall là `oov_penalty` và `real_word_penalty` được chỉnh bằng tìm kiếm lưới trên 400 câu đầu của VSEC-dev (`scripts/train_ngram.py --tune`), chọn cặp có Correction F1 cao nhất. Lưới cuối cùng trong `configs/ngram.yaml` là `oov_penalty` ∈ {−0,5; −1,0; −1,5; −3,0} × `real_word_penalty` ∈ {−0,5; −1,0; −1,5; −2,0; −3,0}; giá trị được chọn là (−0,5; −1,5). Các mô hình trong ablation dùng chung tham số giải mã này, không chỉnh lại riêng.
-- **Mô hình A + S4 (luật giảm sửa quá tay, mục 5.5):** bốn tham số của các luật được dò bằng lưới 2 × 2 × 4 × 5 = 80 cấu hình trên **toàn bộ 1.868 câu VSEC-dev** (`scripts/tune_ngram_s4.py`), giữ nguyên các tham số giải mã khác. Tiêu chí chọn là Correction F0.5 (trọng số precision gấp đôi recall) thay vì F1: trên văn bản thật, phần lớn câu không có lỗi nên một lần sửa nhầm gây hại nhiều hơn một lỗi bị bỏ sót. Tiêu chí F0.5 được đặt ra trước khi xem kết quả của S4 trên tập kiểm tra; tuy vậy bản thân các luật S4 được thiết kế sau khi phân tích lỗi của A trên Viwiki-test (xem lưu ý ở mục 5.5).
+- **Mô hình A + S4 (luật giảm sửa quá tay, mục 5.5):** bốn tham số của các luật được dò bằng lưới 2 × 2 × 4 × 5 = 80 cấu hình trên **toàn bộ 1.873 câu VSEC-dev** (`scripts/tune_ngram_s4.py`), giữ nguyên các tham số giải mã khác. Tiêu chí chọn là Correction F0.5 (trọng số precision gấp đôi recall) thay vì F1: trên văn bản thật, phần lớn câu không có lỗi nên một lần sửa nhầm gây hại nhiều hơn một lỗi bị bỏ sót. Tiêu chí F0.5 được đặt ra trước khi xem kết quả của S4 trên tập kiểm tra; tuy vậy bản thân các luật S4 được thiết kế sau khi phân tích lỗi của A trên Viwiki-test (xem lưu ý ở mục 5.5).
 - **Mô hình C:** chọn checkpoint theo `eval_loss` trên Syn-val; không dùng VSEC-dev hay các tập lỗi thật để huấn luyện. [chờ BARTpho]
 - **Viwiki-test** không được dùng cho bất kỳ quyết định nào; **VSEC-test** chỉ dùng để báo cáo.
 
@@ -482,7 +482,7 @@ Phân tích lỗi của mô hình A trên Viwiki (`outputs/tables/overcorrection
 - `capital_penalty`: cộng thêm một hình phạt khi sửa âm tiết viết hoa không đứng đầu câu, kể cả âm tiết có trong từ điển (trước đây chỉ âm tiết ngoài từ điển mới được bảo vệ).
 - `edit_margin` (ngưỡng tin cậy): cộng thêm một hình phạt cho **mọi** lựa chọn khác giữ nguyên, tức là một lần sửa chỉ được chấp nhận khi điểm của nó vượt điểm giữ nguyên ít nhất |δ| (log10).
 
-Cấu hình được chọn trên VSEC-dev theo Correction F0.5 (mục 4.4) là: bật `ignore_iy` và `keep_non_vietnamese`, `capital_penalty` = −2,0, `edit_margin` = −0,5. Trên VSEC-dev, Cor P tăng từ 0,821 lên 0,892 và Cor F1 tăng nhẹ từ 0,770 lên 0,774, số lần sửa giảm từ 1.951 xuống 1.692 (`outputs/tables/ngram_s4_tuning.csv`). Cấu hình tốt nhất theo F1 (`edit_margin` = −0,25) chỉ hơn cấu hình được chọn 0,003 F1 trên dev nhưng có precision thấp hơn 0,018.
+Cấu hình được chọn trên VSEC-dev theo Correction F0.5 (mục 4.4) là: bật `ignore_iy` và `keep_non_vietnamese`, `capital_penalty` = −2,0, `edit_margin` = −0,5. Trên VSEC-dev, Cor P tăng từ 0,821 lên 0,892 và Cor F1 tăng nhẹ từ 0,771 lên 0,775, số lần sửa giảm từ 1.959 xuống 1.699 (`outputs/tables/ngram_s4_tuning.csv`). Cấu hình tốt nhất theo F1 (`edit_margin` = −0,25) chỉ hơn cấu hình được chọn 0,003 F1 trên dev nhưng có precision thấp hơn 0,018.
 
 **Lưu ý về tính độc lập của tập kiểm tra.** S4 và v4 là *thí nghiệm phát triển sau khi phân tích lỗi trên tập kiểm tra*: các luật S4 được thiết kế từ phân tích sửa quá tay của A trên Viwiki-test, còn tỉ lệ lỗi dấu thanh/dấu phụ của v4 được đặt theo phân bố lỗi của VSEC-test. Tham số số của S4 được chọn trên VSEC-dev và v4 không chỉnh gì thêm theo test, nhưng tập kiểm tra vẫn đã ảnh hưởng tới quyết định thiết kế. Vì vậy kết quả của A + S4 và C v4 trên VSEC-test/Viwiki-test có thể lạc quan hơn thực tế và chưa chứng minh được khả năng tổng quát hóa; muốn khẳng định cần đánh giá trên một tập lỗi thật chưa từng được xem (nhóm chưa có tập như vậy). Các kết quả của A, C v3 và các ablation mật độ nhiễu không chịu ảnh hưởng này.
 
@@ -492,8 +492,8 @@ Cấu hình được chọn trên VSEC-dev theo Correction F0.5 (mục 4.4) là:
 |---|---|---:|---:|---:|---:|---:|---:|
 | Syn-test | A | 0,891 | 0,905 | **0,898** | 0,719 | 0,127 | 11.338 |
 | | A + S4 | 0,935 | 0,797 | 0,860 | 0,615 | 0,058 | 9.523 |
-| VSEC-test | A | 0,819 | 0,741 | 0,778 | 0,694 | 0,063 | 7.825 |
-| | A + S4 | 0,897 | 0,697 | **0,784** | 0,688 | 0,022 | 6.724 |
+| VSEC-test | A | 0,819 | 0,741 | 0,778 | 0,694 | 0,063 | 7.817 |
+| | A + S4 | 0,897 | 0,697 | **0,784** | 0,688 | 0,022 | 6.717 |
 | Viwiki-test | A | 0,221 | 0,487 | 0,304 | 0,834 | 0,128 | 3.393 |
 | | A + S4 | 0,462 | 0,444 | **0,453** | 0,913 | 0,041 | 1.482 |
 

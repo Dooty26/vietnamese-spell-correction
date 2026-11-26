@@ -5,11 +5,11 @@ syn_test,Sai 1 chữ cái (thêm/bớt/thay/đảo),9299,0.8323
 syn_test,Sai dấu phụ (ă â ê ô ơ ư đ),58,0.0052
 syn_test,Sai ≥2 ký tự,1033,0.0925
 syn_test,Tách/ghép âm tiết,0,0.0
-vsec_test,Chỉ sai dấu thanh,4288,0.4957
+vsec_test,Chỉ sai dấu thanh,4286,0.4959
 vsec_test,Chỉ sai hoa/thường,5,0.0006
-vsec_test,Sai 1 chữ cái (thêm/bớt/thay/đảo),2212,0.2557
-vsec_test,Sai dấu phụ (ă â ê ô ơ ư đ),1038,0.12
-vsec_test,Sai ≥2 ký tự,392,0.0453
+vsec_test,Sai 1 chữ cái (thêm/bớt/thay/đảo),2209,0.2556
+vsec_test,Sai dấu phụ (ă â ê ô ơ ư đ),1036,0.1199
+vsec_test,Sai ≥2 ký tự,392,0.0454
 vsec_test,Tách/ghép âm tiết,715,0.0827
 viwiki_test,Chỉ sai dấu thanh,525,0.3405
 viwiki_test,Chỉ sai hoa/thường,5,0.0032
