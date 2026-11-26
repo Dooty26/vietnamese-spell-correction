@@ -217,7 +217,7 @@ Hình 3.1 trình bày pipeline của hệ thống. Pipeline gồm ba khối: (1)
 
 ![Hình 3.1. Pipeline tổng thể của hệ thống (nguồn Mermaid: `report/figures/pipeline.mmd`).](figures/pipeline.svg)
 
-**Hình 3.1.** Pipeline tổng thể. Đường nét đứt: VSEC-dev chỉ được dùng để chỉnh tham số giải mã của mô hình A; Viwiki-test không tham gia bất kỳ bước chỉnh nào.
+**Hình 3.1.** Pipeline tổng thể. Đường nét đứt: VSEC-dev chỉ được dùng để chỉnh tham số giải mã của mô hình A; tham số không được chỉnh trên tập kiểm tra. Riêng thiết kế của S4 và v4 được rút ra từ phân tích lỗi trên VSEC-test/Viwiki-test (mục 5.5).
 
 Mã nguồn được tổ chức thành gói Python `vspell` (`src/vspell/`) với các mô-đun `normalize`, `data`, `noise`, `models`, `eval`; các bước chạy là script dòng lệnh trong `scripts/` (`prepare_data.py` → `gen_noise.py` → `train_ngram.py` / `train_bartpho.py` → `predict.py` → `evaluate.py`), cấu hình nằm trong `configs/*.yaml`.
 
@@ -375,7 +375,7 @@ Các chỉ số được tính ở mức vi mô (micro) trên toàn tập. Mọi
 ## 4.4. Quy trình chọn tham số
 
 - **Mô hình A:** cấu trúc mô hình (bậc 3, Kneser-Ney, $D = 0{,}75$, beam 5, chi phí các nguồn ứng viên) được đặt theo kinh nghiệm. Hai tham số ảnh hưởng mạnh nhất đến cân bằng precision/recall là `oov_penalty` và `real_word_penalty` được chỉnh bằng tìm kiếm lưới trên 400 câu đầu của VSEC-dev (`scripts/train_ngram.py --tune`), chọn cặp có Correction F1 cao nhất. Lưới cuối cùng trong `configs/ngram.yaml` là `oov_penalty` ∈ {−0,5; −1,0; −1,5; −3,0} × `real_word_penalty` ∈ {−0,5; −1,0; −1,5; −2,0; −3,0}; giá trị được chọn là (−0,5; −1,5). Các mô hình trong ablation dùng chung tham số giải mã này, không chỉnh lại riêng.
-- **Mô hình A + S4 (luật giảm sửa quá tay, mục 5.5):** bốn tham số của các luật được dò bằng lưới 2 × 2 × 4 × 5 = 80 cấu hình trên **toàn bộ 1.868 câu VSEC-dev** (`scripts/tune_ngram_s4.py`), giữ nguyên các tham số giải mã khác. Tiêu chí chọn là Correction F0.5 (trọng số precision gấp đôi recall) thay vì F1: trên văn bản thật, phần lớn câu không có lỗi nên một lần sửa nhầm gây hại nhiều hơn một lỗi bị bỏ sót. Đây là lựa chọn phương pháp đặt ra trước khi xem kết quả trên tập kiểm tra.
+- **Mô hình A + S4 (luật giảm sửa quá tay, mục 5.5):** bốn tham số của các luật được dò bằng lưới 2 × 2 × 4 × 5 = 80 cấu hình trên **toàn bộ 1.868 câu VSEC-dev** (`scripts/tune_ngram_s4.py`), giữ nguyên các tham số giải mã khác. Tiêu chí chọn là Correction F0.5 (trọng số precision gấp đôi recall) thay vì F1: trên văn bản thật, phần lớn câu không có lỗi nên một lần sửa nhầm gây hại nhiều hơn một lỗi bị bỏ sót. Tiêu chí F0.5 được đặt ra trước khi xem kết quả của S4 trên tập kiểm tra; tuy vậy bản thân các luật S4 được thiết kế sau khi phân tích lỗi của A trên Viwiki-test (xem lưu ý ở mục 5.5).
 - **Mô hình C:** chọn checkpoint theo `eval_loss` trên Syn-val; không dùng VSEC-dev hay các tập lỗi thật để huấn luyện. [chờ BARTpho]
 - **Viwiki-test** không được dùng cho bất kỳ quyết định nào; **VSEC-test** chỉ dùng để báo cáo.
 
@@ -483,6 +483,8 @@ Phân tích lỗi của mô hình A trên Viwiki (`outputs/tables/overcorrection
 - `edit_margin` (ngưỡng tin cậy): cộng thêm một hình phạt cho **mọi** lựa chọn khác giữ nguyên, tức là một lần sửa chỉ được chấp nhận khi điểm của nó vượt điểm giữ nguyên ít nhất |δ| (log10).
 
 Cấu hình được chọn trên VSEC-dev theo Correction F0.5 (mục 4.4) là: bật `ignore_iy` và `keep_non_vietnamese`, `capital_penalty` = −2,0, `edit_margin` = −0,5. Trên VSEC-dev, Cor P tăng từ 0,821 lên 0,892 và Cor F1 tăng nhẹ từ 0,770 lên 0,774, số lần sửa giảm từ 1.951 xuống 1.692 (`outputs/tables/ngram_s4_tuning.csv`). Cấu hình tốt nhất theo F1 (`edit_margin` = −0,25) chỉ hơn cấu hình được chọn 0,003 F1 trên dev nhưng có precision thấp hơn 0,018.
+
+**Lưu ý về tính độc lập của tập kiểm tra.** S4 và v4 là *thí nghiệm phát triển sau khi phân tích lỗi trên tập kiểm tra*: các luật S4 được thiết kế từ phân tích sửa quá tay của A trên Viwiki-test, còn tỉ lệ lỗi dấu thanh/dấu phụ của v4 được đặt theo phân bố lỗi của VSEC-test. Tham số số của S4 được chọn trên VSEC-dev và v4 không chỉnh gì thêm theo test, nhưng tập kiểm tra vẫn đã ảnh hưởng tới quyết định thiết kế. Vì vậy kết quả của A + S4 và C v4 trên VSEC-test/Viwiki-test có thể lạc quan hơn thực tế và chưa chứng minh được khả năng tổng quát hóa; muốn khẳng định cần đánh giá trên một tập lỗi thật chưa từng được xem (nhóm chưa có tập như vậy). Các kết quả của A, C v3 và các ablation mật độ nhiễu không chịu ảnh hưởng này.
 
 **Bảng 5.5.** Mô hình A trước và sau khi thêm luật S4 (`main_results.csv`, tag `ngram` và `ngram_s4`).
 

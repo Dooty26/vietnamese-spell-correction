@@ -40,6 +40,8 @@ Correction F1 mức âm tiết (`outputs/tables/main_results.csv`; phân tích: 
 | C: BARTpho v3 (nhiễu gốc 5%, 150k cặp × 3 epoch) | **0,959** | 0,536 | 0,240 |
 | C: BARTpho v4 (nhiễu giàu lỗi dấu, 50k cặp × 1 epoch) | 0,912 | 0,749 | 0,322 |
 
+*A + S4 và C v4 được thiết kế sau khi phân tích lỗi trên tập kiểm tra (luật S4 từ lỗi của A trên Viwiki-test, tỉ lệ lỗi của v4 theo phân bố VSEC-test); tham số S4 chọn trên VSEC-dev. Hai dòng này là kết quả phát triển, chưa phải đánh giá độc lập; xem `report/phan_tich_A_vs_C.md` mục 4.2.*
+
 Ablation: A theo bậc n-gram × smoothing (`ngram_perplexity.csv`); C theo mật độ nhiễu 5/12/25% (`ablation_noise_density.csv`) và loại lỗi sinh nhiễu (v4 so với d12).
 
 ## Tải sẵn dữ liệu và checkpoint

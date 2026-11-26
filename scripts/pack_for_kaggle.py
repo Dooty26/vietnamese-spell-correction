@@ -16,6 +16,9 @@ EVAL = ["syn_val", "syn_test", "vsec_test", "viwiki_test"]
 
 
 def write_parts(lines: list[str], name: str, out: Path, limit: int) -> list[int]:
+    # Xóa các phần cũ cùng tên trước: lần trước có thể cắt thành nhiều phần hơn, phần dư sẽ bị notebook ghép vào.
+    for old in out.glob(f"{name}.part[0-9][0-9].jsonl.gz"):
+        old.unlink()
     sample = gzip.compress("".join(lines[:20000]).encode(), 9)
     per = max(1, int(limit * 0.9 / (len(sample) / min(len(lines), 20000))))
     sizes = []

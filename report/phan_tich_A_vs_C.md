@@ -100,6 +100,9 @@ Kết quả trên VSEC-test (`ablation_noise_density.csv`, hình `ablation_noise
 
 Mục 2 cho thấy nguyên nhân chính khiến C thua trên lỗi thật là lệch phân bố loại lỗi. v4 kiểm chứng trực tiếp giả thuyết này:
 
+*Lưu ý về tính độc lập của tập kiểm tra. S4 và v4 là *thí nghiệm phát triển sau khi phân tích lỗi trên tập kiểm tra*: các luật S4 được thiết kế từ phân tích sửa quá tay của A trên Viwiki-test, còn tỉ lệ lỗi dấu thanh/dấu phụ của v4 được đặt theo phân bố lỗi của VSEC-test. Tham số số của S4 được chọn trên VSEC-dev và v4 không chỉnh gì thêm theo test, nhưng tập kiểm tra vẫn đã ảnh hưởng tới quyết định thiết kế. Vì vậy kết quả của A + S4 và C v4 trên VSEC-test/Viwiki-test có thể lạc quan hơn thực tế và chưa chứng minh được khả năng tổng quát hóa; muốn khẳng định cần đánh giá trên một tập lỗi thật chưa từng được xem (nhóm chưa có tập như vậy). Các kết quả của A, C v3 và các ablation mật độ nhiễu không chịu ảnh hưởng này.*
+
+
 - **Hai luật nhiễu mới** trong `src/vspell/noise/rules.py`:
   - `tone_error`: đổi hoặc bỏ dấu thanh;
   - `diacritic_error`: đổi a/ă/â, o/ô/ơ, u/ư, d/đ.
