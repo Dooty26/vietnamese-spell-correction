@@ -140,7 +140,7 @@ class CandidateGenerator:
         return outs
 
     def _candidates(self, tok: str) -> tuple[tuple[str, str, float], ...]:
-        """tok (chữ thường) -> ((ứng viên, nguồn, chi phí), ...) sắp theo chi phí rồi tần suất; không gồm tok."""
+        """tok (chữ thường) -> ((ứng viên, nguồn, chi phí), ...) sắp theo chi phí, tần suất, rồi chữ cái; không gồm tok."""
         found: dict[str, tuple[str, float]] = {}
 
         def add(cand: str, source: str) -> None:
@@ -167,7 +167,8 @@ class CandidateGenerator:
                 add(c, "edit1")
             elif dist == 2 and self.max_d >= 2:
                 add(c, "edit2")
-        ranked = sorted(found.items(), key=lambda kv: (-kv[1][1], -self.lexicon[kv[0]]))
+        # phá hòa bằng chính chuỗi ứng viên: `pool` là set nên thứ tự duyệt phụ thuộc PYTHONHASHSEED
+        ranked = sorted(found.items(), key=lambda kv: (-kv[1][1], -self.lexicon[kv[0]], kv[0]))
         return tuple((c, src, cost) for c, (src, cost) in ranked[:self.max_candidates])
 
 

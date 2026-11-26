@@ -11,7 +11,7 @@ import json
 import os
 from pathlib import Path
 
-TRAIN = ["syn_train", "syn_train_d05", "syn_train_d12", "syn_train_d25"]
+TRAIN = ["syn_train", "syn_train_d05", "syn_train_d12", "syn_train_d25", "syn_train_v4"]
 EVAL = ["syn_val", "syn_test", "vsec_test", "viwiki_test"]
 
 

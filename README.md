@@ -37,7 +37,7 @@ Correction F1 mức âm tiết (`outputs/tables/main_results.csv`; phân tích: 
 |---|---|---|---|
 | A: n-gram 3-gram KN | 0,898 | 0,778 | 0,304 |
 | A + S4 (luật giảm sửa quá tay, chỉnh trên VSEC-dev) | 0,860 | **0,784** | **0,453** |
-| C: BARTpho v3 (nhiễu gốc, 150k cặp × 3 epoch) | **0,959** | 0,536 | 0,240 |
+| C: BARTpho v3 (nhiễu gốc 5%, 150k cặp × 3 epoch) | **0,959** | 0,536 | 0,240 |
 | C: BARTpho v4 (nhiễu giàu lỗi dấu, 50k cặp × 1 epoch) | 0,912 | 0,749 | 0,322 |
 
 Ablation: A theo bậc n-gram × smoothing (`ngram_perplexity.csv`); C theo mật độ nhiễu 5/12/25% (`ablation_noise_density.csv`) và loại lỗi sinh nhiễu (v4 so với d12).

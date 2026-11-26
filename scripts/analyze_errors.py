@@ -49,7 +49,7 @@ MODEL_LABEL = {"ngram": "A: n-gram (3-gram KN)", "bartpho": "C: BARTpho v3", "id
                "bartpho_v4": "C: BARTpho v4 (nhiễu dấu)", "bartpho_d12": "C: BARTpho d12 (50k, 1 ep)"}
 # Ablation C (mật độ nhiễu khi sinh dữ liệu train): tag -> (mật độ, nhãn)
 ABLATION_C = {"bartpho_d05": (0.05, "5% · 50k · 1 ep"), "bartpho_d12": (0.12, "12% · 50k · 1 ep"),
-              "bartpho_d25": (0.25, "25% · 50k · 1 ep"), "bartpho": (0.12, "12% · 150k · 3 ep\n(mô hình chính)")}
+              "bartpho_d25": (0.25, "25% · 50k · 1 ep"), "bartpho": (0.05, "5% · 150k · 3 ep\n(mô hình chính)")}
 CAT_LABEL = {"sua_dung": "Sửa đúng", "sua_sai": "Sửa sai ứng viên", "bo_sot": "Bỏ sót",
              "sua_qua_tay": "Sửa quá tay"}
 SUB_LABEL = {"so_ky_hieu": "Số/ký hiệu", "ten_rieng": "Tên riêng/viết hoa",

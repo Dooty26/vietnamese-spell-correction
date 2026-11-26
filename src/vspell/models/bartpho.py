@@ -232,11 +232,45 @@ def train(config: dict, train_path: str, val_path: str) -> str:
 
 # ---------------------------------------------------------------- suy luận
 
+_CUT_AFTER = (".", ",", ";", ":", "!", "?", "…", ")", '"')
+
+
+def split_long(text: str, n_tokens, max_tokens: int) -> list[str]:
+    """Chia câu dài thành các đoạn (tách tại khoảng trắng) sao cho mỗi đoạn có `n_tokens(đoạn) <= max_tokens`.
+
+    Ghép lại bằng " " ra đúng câu vào (câu đã `normalize` nên khoảng trắng là một dấu cách). Ưu tiên cắt sau
+    dấu câu nếu điểm cắt đó nằm ở nửa sau của đoạn. Một từ đơn lẻ dài hơn giới hạn vẫn thành một đoạn riêng
+    (tokenizer sẽ cắt nó). Câu ngắn trả về nguyên [text].
+    """
+    if n_tokens(text) <= max_tokens:
+        return [text]
+    chunks: list[str] = []
+    cur: list[str] = []
+    for w in text.split(" "):
+        if cur and n_tokens(" ".join(cur + [w])) > max_tokens:
+            cut = max((k for k in range(len(cur) // 2, len(cur)) if cur[k].endswith(_CUT_AFTER)), default=None)
+            if cut is None or cut == len(cur) - 1:
+                chunks.append(" ".join(cur))
+                cur = []
+            else:
+                chunks.append(" ".join(cur[:cut + 1]))
+                cur = cur[cut + 1:]
+            # phần còn lại cộng từ mới vẫn có thể quá dài -> đẩy tiếp
+            while cur and n_tokens(" ".join(cur + [w])) > max_tokens:
+                chunks.append(" ".join(cur))
+                cur = []
+        cur.append(w)
+    if cur:
+        chunks.append(" ".join(cur))
+    return chunks
+
+
 class BartphoCorrector:
     """Sửa lỗi theo batch bằng beam search. Đầu ra đã qua `normalize`.
 
     max_length: độ dài tối đa (token) của câu vào; câu ra được phép dài hơn câu vào một chút
-    (`len_ratio`, `len_extra`). Câu vào được sắp theo độ dài để giảm padding, rồi trả về đúng thứ tự.
+    (`len_ratio`, `len_extra`). Câu vào dài hơn `max_length` được chia đoạn (`split_long`), sửa từng đoạn
+    rồi ghép lại. Các đoạn được sắp theo độ dài để giảm padding, rồi trả về đúng thứ tự.
     """
 
     def __init__(self, checkpoint: str, num_beams: int = 4, max_length: int = 256, device: str | None = None,
@@ -264,11 +298,19 @@ class BartphoCorrector:
         from tqdm import tqdm
 
         srcs = [normalize(s) for s in sentences]
-        order = sorted(range(len(srcs)), key=lambda i: len(srcs[i]), reverse=True)
-        out: list[str | None] = [None] * len(srcs)
+        # Câu dài hơn max_length token: chia thành đoạn, sửa từng đoạn rồi ghép lại (không cắt mất phần cuối).
+        n_tok = lambda t: len(self.tokenizer(to_bartpho_style(t))["input_ids"])  # noqa: E731
+        pieces: list[str] = []
+        owner: list[int] = []
+        for i, src in enumerate(srcs):
+            for part in split_long(src, n_tok, self.max_length):
+                pieces.append(part)
+                owner.append(i)
+        order = sorted(range(len(pieces)), key=lambda i: len(pieces[i]), reverse=True)
+        fixed: list[str | None] = [None] * len(pieces)
         for start in tqdm(range(0, len(order), batch_size), desc="bartpho", unit="batch"):
             idx = order[start:start + batch_size]
-            batch = [to_bartpho_style(srcs[i]) for i in idx]
+            batch = [to_bartpho_style(pieces[i]) for i in idx]
             enc = self.tokenizer(batch, max_length=self.max_length, truncation=True,
                                  padding=True, return_tensors="pt").to(self.device)
             max_new = int(enc["input_ids"].shape[1] * self.len_ratio) + self.len_extra
@@ -276,5 +318,9 @@ class BartphoCorrector:
                 gen = self.model.generate(**enc, num_beams=self.num_beams, max_new_tokens=max_new,
                                           early_stopping=True)
             for i, text in zip(idx, self.tokenizer.batch_decode(gen, skip_special_tokens=True)):
-                out[i] = postprocess(srcs[i], text) if text.strip() else srcs[i]  # câu rỗng -> giữ nguyên câu vào
+                fixed[i] = postprocess(pieces[i], text) if text.strip() else pieces[i]  # rỗng -> giữ đoạn vào
+        parts: list[list[str]] = [[] for _ in srcs]
+        for i, text in zip(owner, fixed):
+            parts[i].append(text)  # type: ignore[arg-type]
+        out = [" ".join(p) for p in parts]
         return out  # type: ignore[return-value]

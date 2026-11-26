@@ -90,3 +90,22 @@ def test_s4_rules_off_by_default_and_reduce_edits():
     # Từ không dấu, sai cấu trúc âm tiết TV ("vàngs" kiểu Telex vẫn sửa được): "vanga" không bị sửa thành "vàng"
     assert "vàng" not in [c for c, _ in s4._options("vanga", False)]
     assert base.edit_margin == 0.0 and not base.ignore_iy
+
+
+def test_candidates_deterministic_across_hash_seeds():
+    """Ứng viên bằng chi phí và tần suất phải ra cùng thứ tự dù PYTHONHASHSEED khác (cắt ở max_candidates)."""
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    code = ("from vspell.models.ngram_corrector import CandidateGenerator\n"
+            "lex = {w: 5 for w in ['cat', 'mat', 'hat', 'bot', 'but', 'ban', 'bao', 'bam', 'tat', 'nat']}\n"
+            "print([c for c, _, _ in CandidateGenerator(lex, 2, 3).candidates('bat')])")
+    src = str(Path(__file__).resolve().parents[1] / "src")
+    outs = set()
+    for seed in ["0", "1", "2", "3", "42"]:
+        env = {**os.environ, "PYTHONHASHSEED": seed, "PYTHONPATH": src, "PYTHONUTF8": "1"}
+        outs.add(subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True,
+                                check=True).stdout)
+    assert len(outs) == 1

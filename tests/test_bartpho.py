@@ -101,3 +101,27 @@ def test_to_bartpho_style_and_postprocess():
     assert normalize(to_bartpho_style(s)) == s
     assert postprocess("a…", "a...") == "a…"
     assert postprocess("a...", "a...") == "a..."
+
+
+def test_split_long_keeps_all_words():
+    from vspell.models.bartpho import split_long
+
+    n = lambda t: len(t.split()) + 2  # noqa: E731  (2 token đặc biệt)
+    text = "một hai ba , bốn năm sáu bảy . tám chín mười mười một"
+    assert split_long("ngắn thôi", n, 10) == ["ngắn thôi"]
+    parts = split_long(text, n, 7)
+    assert " ".join(parts) == text
+    assert all(n(p) <= 7 for p in parts)
+    assert parts[0].endswith(",") or parts[0].endswith(".")  # ưu tiên cắt sau dấu câu
+
+
+def test_correct_long_sentence_not_truncated(tiny_model):
+    """Câu vượt max_length phải được chia đoạn: với mô hình 'chép lại' đầu vào, đầu ra phải đủ cả câu."""
+    corr = BartphoCorrector(tiny_model, num_beams=1, max_length=8)
+    corr.model.generate = lambda input_ids, **kw: input_ids  # mô hình đồng nhất
+    long = " ".join(s for s, _ in PAIRS[:3])  # 3 câu ~ 20 token, gấp ~2,5 lần giới hạn
+    short = PAIRS[4][0]
+    out = corr.correct([long, short], batch_size=2)
+    from vspell.normalize import normalize, split_syllables
+    # tokenizer tí hon giải mã có dấu cách trước dấu câu -> so theo âm tiết
+    assert [split_syllables(o) for o in out] == [split_syllables(normalize(x)) for x in (long, short)]

@@ -89,10 +89,12 @@ Kết quả trên VSEC-test (`ablation_noise_density.csv`, hình `ablation_noise
 | 5% nhiễu · 50k cặp · 1 epoch | 0,884 | 0,422 | 0,572 | 0,024 |
 | 12% · 50k · 1 epoch | 0,882 | **0,480** | 0,622 | 0,028 |
 | 25% · 50k · 1 epoch | 0,895 | 0,479 | **0,624** | 0,045 |
-| 12% · 150k · 3 epoch (mô hình chính) | 0,888 | 0,384 | 0,536 | 0,026 |
+| 5% · 150k · 3 epoch (mô hình chính, v3) | 0,888 | 0,384 | 0,536 | 0,026 |
+
+*Mô hình chính train trên `syn_train.jsonl`, sinh bằng `configs/noise.yaml` với mật độ 5% (`syn_train.stats.json`: `syllable_error_rate` 0,05), không phải 12%. Vì vậy mốc so sánh đúng cho quy mô huấn luyện là dòng 5% · 50k, không phải dòng 12%.*
 
 - **Mật độ nhiễu:** tăng từ 5% lên 12% làm recall tăng 6 điểm, còn precision gần như không đổi. Lên 25% thì F1 không tăng thêm, trong khi tỉ lệ sửa quá tay gần gấp đôi. Mức 12% là điểm cân bằng hợp lý.
-- **Quy mô huấn luyện:** mô hình chính được train nhiều hơn khoảng 9 lần (150k cặp × 3 epoch). Nó tốt hơn trên Syn-test nhưng **kém hơn** trên VSEC (0,536 so với 0,622). Train càng lâu trên dữ liệu tổng hợp, mô hình càng khớp với phân bố nhiễu tự sinh và càng ít dám sửa những lỗi không giống dữ liệu train. Vì vậy, chọn checkpoint theo Syn-val không phải là tiêu chí tốt khi mục tiêu là lỗi thật.
+- **Quy mô huấn luyện** (cùng mật độ 5%): mô hình chính được train nhiều hơn khoảng 9 lần (150k cặp × 3 epoch). Nó tốt hơn trên Syn-test nhưng **kém hơn** trên VSEC (F1 0,536 so với 0,572; recall 0,384 so với 0,422). Train càng lâu trên dữ liệu tổng hợp, mô hình càng khớp với phân bố nhiễu tự sinh và càng ít dám sửa những lỗi không giống dữ liệu train. Vì vậy, chọn checkpoint theo Syn-val không phải là tiêu chí tốt khi mục tiêu là lỗi thật.
 
 ### 4.2. Loại lỗi sinh nhiễu (v4)
 
@@ -196,5 +198,5 @@ Các ví dụ được đánh số theo `outputs/tables/error_examples.md`. Ví 
 3. **Hai mô hình bổ sung cho nhau.** C mạnh ở lỗi sai nhiều ký tự và lỗi cần ngữ cảnh rộng, A mạnh ở lỗi dấu. Kết hợp hai mô hình (ví dụ dùng A tạo ứng viên rồi C xếp hạng, hoặc ensemble) là hướng phát triển tự nhiên.
 4. **Kết quả ablation C:**
    - Tăng mật độ nhiễu lên 12% có lợi.
-   - Train lâu hơn trên dữ liệu tổng hợp lại có hại khi chuyển sang lỗi thật.
+   - Train lâu hơn trên dữ liệu tổng hợp lại có hại khi chuyển sang lỗi thật (cùng mật độ 5%: 0,572 → 0,536 trên VSEC).
    - Loại lỗi sinh nhiễu là yếu tố ảnh hưởng lớn nhất (+12,7 điểm F1 trên VSEC).
