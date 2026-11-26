@@ -181,6 +181,45 @@ def edit_distance_error(syl: str, rng: random.Random) -> str | None:
     return _finish(unicodedata.normalize("NFC", new), syl)
 
 
+# ---------------------------------------------------------------- dấu thanh / dấu phụ (v4)
+# Lỗi thật trong VSEC/Viwiki: ~50% / 34% chỉ sai dấu thanh, 12% / 16% sai dấu phụ (xem real_error_kinds.csv),
+# trong khi 6 luật trên gần như chỉ sinh lỗi chữ cái. Hai luật này dùng cho cấu hình configs/noise_v4.yaml.
+_ALL_TONES = [None, TONE_ACUTE, TONE_GRAVE, TONE_HOOK, TONE_TILDE, TONE_DOT]
+_DIACRITIC_SWAPS = {"a": "ăâ", "ă": "aâ", "â": "aă", "e": "ê", "ê": "e", "o": "ôơ", "ô": "oơ", "ơ": "oô",
+                    "u": "ư", "ư": "u", "d": "đ", "đ": "d"}
+
+
+def _pick_valid(cands: list[str], syl: str, rng: random.Random, valid_bias: float = 0.85) -> str | None:
+    """Ưu tiên âm tiết hợp lệ (lỗi thật phần lớn tạo ra âm tiết có thật); thỉnh thoảng nhận âm tiết sai cấu trúc."""
+    cands = [c for c in dict.fromkeys(cands) if c and c != syl.lower()]
+    rng.shuffle(cands)
+    valid = [c for c in cands if is_vietnamese_syllable(c)]
+    pool = valid if valid and rng.random() < valid_bias else cands
+    return _finish(pool[0], syl) if pool else None
+
+
+def tone_error(syl: str, rng: random.Random) -> str | None:
+    """Đổi dấu thanh sang một thanh khác hoặc bỏ dấu thanh ("đóng" -> "đòng", "buổi" -> "buỗi", "giảm" -> "giam")."""
+    base, tone = split_tone(syl.lower())
+    if not _HAS_VOWEL(base):
+        return None
+    return _pick_valid([add_tone(base, t) for t in _ALL_TONES if t != tone], syl, rng)
+
+
+def diacritic_error(syl: str, rng: random.Random) -> str | None:
+    """Thêm/bớt/đổi dấu phụ của một chữ cái (a/ă/â, e/ê, o/ô/ơ, u/ư, d/đ), giữ dấu thanh ("được" -> "đuợc")."""
+    base, tone = split_tone(syl.lower())
+    cands = []
+    for i, ch in enumerate(base):
+        for new in _DIACRITIC_SWAPS.get(ch, ""):
+            cands.append(add_tone(base[:i] + new + base[i + 1:], tone))
+    return _pick_valid(cands, syl, rng)
+
+
+def _HAS_VOWEL(base: str) -> bool:
+    return any(c in "aăâeêioôơuưy" for c in base)
+
+
 RULES = {
     "region": region_error,
     "telex": telex_error,
@@ -188,4 +227,6 @@ RULES = {
     "teencode": teencode_error,
     "acronym": acronym_error,
     "edit_distance": edit_distance_error,
+    "tone": tone_error,
+    "diacritic": diacritic_error,
 }

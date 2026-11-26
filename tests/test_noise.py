@@ -56,3 +56,17 @@ def test_region_makes_valid_syllables_and_telex_examples():
         assert out is None or is_vietnamese_syllable(out)
     outs = {telex_error("được", random.Random(s)) for s in range(30)}
     assert "đươcj" in outs
+
+
+def test_tone_and_diacritic_rules():
+    import random
+    from vspell.normalize import remove_diacritics, split_tone
+    from vspell.noise.rules import diacritic_error, tone_error
+    rng = random.Random(0)
+    for w in ["đóng", "Buổi", "giảm", "người", "hoà", "khác"]:
+        t = tone_error(w, rng)
+        assert t and t != w and split_tone(t)[0] == split_tone(w)[0]  # chỉ khác dấu thanh
+        d = diacritic_error(w, rng)
+        assert d and d != w and remove_diacritics(d) == remove_diacritics(w)
+        assert split_tone(d)[1] == split_tone(w)[1]  # giữ dấu thanh
+    assert tone_error("x", rng) is None

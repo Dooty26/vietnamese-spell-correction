@@ -1,0 +1,21 @@
+# Cấu hình nhiễu v4: tăng lỗi dấu thanh/dấu phụ cho gần phân bố lỗi thật (VSEC: 49,6% chỉ sai dấu thanh,
+# 12% sai dấu phụ; cấu hình gốc chỉ sinh 6,6% và 0,4%). Xem report/phan_tich_A_vs_C.md, mục 2.
+seed: 42
+syllable_error_rate: 0.12    # bằng ablation d12 để so sánh công bằng (cùng 50k câu đầu, cùng seed)
+clean_sentence_ratio: 0.15
+keep_syllable_count: true
+
+error_type_weights:
+  tone: 0.40          # đổi/bỏ dấu thanh
+  diacritic: 0.12     # a/ă/â, e/ê, o/ô/ơ, u/ư, d/đ
+  region: 0.12
+  fat_finger: 0.16
+  telex: 0.10
+  edit_distance: 0.05
+  teencode: 0.025
+  acronym: 0.025
+
+skip_tokens:
+  - numbers
+  - punctuation
+  - capitalized_foreign
