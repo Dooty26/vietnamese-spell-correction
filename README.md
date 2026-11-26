@@ -66,15 +66,17 @@ Lưu ý: `errors_per_word` trong `.stats.json` thấp hơn tham số (~0,83×) v
 ## Demo
 Ứng dụng Gradio trong `demo/app.py` (cần `pip install gradio`). Chạy từ thư mục gốc dự án:
 ```bash
-python -X utf8 demo/app.py                    # A + C: tự nạp BARTpho nếu có outputs/checkpoints/bartpho/best
+python -X utf8 demo/app.py                    # A + C: tự nạp BARTpho v4 (outputs/checkpoints/bartpho_v4/best), không có thì v3
 python -X utf8 demo/app.py --no-bartpho       # chỉ mô hình A (n-gram), khởi động nhanh
 ```
 Mở http://127.0.0.1:7860. Các tham số:
 - `--ngram-dir`: mặc định `outputs/checkpoints/ngram/o3_kneser_ney`, thư mục chứa `lm.pkl`, `lexicon.json`, `config.json`;
-- `--bartpho-checkpoint`: mặc định `outputs/checkpoints/bartpho/best`;
+- `--bartpho-checkpoint`: mặc định `outputs/checkpoints/bartpho_v4/best`, nếu không có thì `outputs/checkpoints/bartpho/best`;
 - `--port`, `--host`, `--share`.
 
-**Checkpoint BARTpho** (khoảng 1,6 GB, không nằm trong git) nằm ở *Output* của notebook Kaggle, trong `repo/outputs/checkpoints/bartpho/best/`. Chỉ cần tải `model.safetensors` về thư mục trên. Các file tokenizer/config giống hệt `vinai/bartpho-syllable` và có thể chép từ bất kỳ checkpoint nào do `scripts/train_bartpho.py` tạo ra.
+**Checkpoint BARTpho v4** (khuyên dùng, ~800 MB fp16, không nằm trong git): xuất từ Colab sau khi train ablation v4 (`AutoModelForSeq2SeqLM.from_pretrained(...).half().save_pretrained(...)`), giải nén vào `outputs/checkpoints/bartpho_v4/best/`. Mô hình được nạp lại ở fp32 nên chạy được trên CPU.
+
+**Checkpoint BARTpho v3** (khoảng 1,6 GB, không nằm trong git) nằm ở *Output* của notebook Kaggle, trong `repo/outputs/checkpoints/bartpho/best/`. Chỉ cần tải `model.safetensors` về thư mục trên. Các file tokenizer/config giống hệt `vinai/bartpho-syllable` và có thể chép từ bất kỳ checkpoint nào do `scripts/train_bartpho.py` tạo ra.
 
 **Chạy được trên CPU:**
 - nạp mô hình khoảng 15 giây;

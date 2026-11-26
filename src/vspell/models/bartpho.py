@@ -253,7 +253,9 @@ class BartphoCorrector:
         self.len_extra = len_extra
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = AutoTokenizer.from_pretrained(checkpoint)
-        self.model = AutoModelForSeq2SeqLM.from_pretrained(checkpoint).to(self.device).eval()
+        # Nạp fp32 rồi mới .half() khi chạy GPU: checkpoint có thể lưu fp16 (vd v4 xuất từ Colab cho nhẹ),
+        # còn fp16 trên CPU vừa chậm vừa thiếu kernel.
+        self.model = AutoModelForSeq2SeqLM.from_pretrained(checkpoint, dtype=torch.float32).to(self.device).eval()
         if fp16 if fp16 is not None else self.device.startswith("cuda"):
             self.model.half()
 

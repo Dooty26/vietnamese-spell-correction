@@ -1,7 +1,7 @@
 """Demo Gradio: nhập câu/đoạn văn -> chọn mô hình (n-gram / BARTpho / cả hai) -> tô âm tiết bị sửa + bảng ứng viên.
 
 Chạy (từ thư mục gốc dự án):
-    python -X utf8 demo/app.py                                   # A + C (tự nạp BARTpho nếu có outputs/checkpoints/bartpho/best)
+    python -X utf8 demo/app.py                                   # A + C (tự nạp BARTpho v4, không có thì v3)
     python -X utf8 demo/app.py --no-bartpho                      # chỉ mô hình A (n-gram), khởi động nhanh
     python -X utf8 demo/app.py --bartpho-checkpoint path/to/best # checkpoint BARTpho khác
     python -X utf8 demo/app.py --port 7861 --share               # đổi cổng / tạo link công khai
@@ -24,7 +24,9 @@ from vspell.models.ngram_lm import BOS, EOS, lm_token  # noqa: E402
 from vspell.normalize import _TOKEN_RE, normalize  # noqa: E402
 
 DEFAULT_NGRAM_DIR = str(ROOT / "outputs/checkpoints/ngram/o3_kneser_ney")
-DEFAULT_BARTPHO_DIR = ROOT / "outputs/checkpoints/bartpho/best"
+# Ưu tiên v4 (nhiễu giàu lỗi dấu: tốt nhất trên lỗi thật), không có thì v3 (150k cặp × 3 epoch).
+BARTPHO_DIRS = [ROOT / "outputs/checkpoints/bartpho_v4/best", ROOT / "outputs/checkpoints/bartpho/best"]
+DEFAULT_BARTPHO_DIR = next((d for d in BARTPHO_DIRS if (d / "model.safetensors").exists()), BARTPHO_DIRS[0])
 
 # Mỗi câu một loại lỗi chính; câu cuối kiểm tra tên riêng không bị "sửa" nhầm.
 EXAMPLES = [
@@ -179,7 +181,7 @@ def build_app(ngram, bartpho):
     with gr.Blocks(title="Sửa lỗi chính tả tiếng Việt") as app:
         gr.Markdown("# Phát hiện và sửa lỗi chính tả tiếng Việt\n"
                     "Mô hình A: noisy channel + LM 3-gram Kneser-Ney."
-                    + (" Mô hình C: BARTpho fine-tune." if bartpho is not None else
+                    + (f" Mô hình C: BARTpho fine-tune (`{Path(bartpho.checkpoint).parent.name}`)." if bartpho is not None else
                        " _(BARTpho chưa nạp: chạy với `--bartpho-checkpoint` để bật.)_"))
         with gr.Row():
             with gr.Column(scale=3):
@@ -211,7 +213,8 @@ def build_app(ngram, bartpho):
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--bartpho-checkpoint", default=None,
-                    help=f"mặc định {DEFAULT_BARTPHO_DIR.relative_to(ROOT)} nếu thư mục đó có model.safetensors")
+                    help="mặc định: thư mục đầu tiên có model.safetensors trong "
+                         + ", ".join(str(d.relative_to(ROOT)) for d in BARTPHO_DIRS))
     ap.add_argument("--no-bartpho", action="store_true", help="không nạp BARTpho (chỉ n-gram)")
     ap.add_argument("--ngram-dir", default=DEFAULT_NGRAM_DIR)
     ap.add_argument("--host", default="127.0.0.1")
