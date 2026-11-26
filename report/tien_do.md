@@ -28,7 +28,7 @@
 - [x] Ví dụ lỗi và hình A vs C (S5b: `report/phan_tich_A_vs_C.md`, ví dụ 15–23)
 - [x] Demo Gradio với A và C (S6b)
 - [ ] Báo cáo PDF 20–30 trang (mới có dàn ý)
-- [~] README tái lập: đã có các bước và mục demo; `requirements.txt` đã bỏ `kenlm`. Còn: rà lại từ đầu theo README trên clone sạch (S9)
+- [x] README tái lập + clone sạch (26/11): clone mới vào `D:/Do/NLP/NLP_Nhom7`, pipeline thu nhỏ (`--scale 0.01`) chạy trọn; với dữ liệu/checkpoint từ Drive, mọi bảng tái tạo khớp repo, dự đoán ngram_s4 300/300 và bartpho_v4 30/30 khớp, demo nạp đủ A (S4) + C (v4). Checkpoint, dữ liệu đã xử lý và dự đoán nằm trên Google Drive (link trong README, chia sẻ công khai). Gói nộp: `D:/Do/NLP/NLP_Nhom7.zip`.
 - [x] Git: đã push GitHub (Dooty26/vietnamese-spell-correction)
 - [ ] Slide và demo 10 phút
 - [x] S4: giảm sửa quá tay của A trên Viwiki (26/11; checkpoint `outputs/checkpoints/ngram/o3_kneser_ney_s4`, demo mặc định dùng bản này)
