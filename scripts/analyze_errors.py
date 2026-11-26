@@ -45,7 +45,10 @@ DATASETS = ["syn_test", "vsec_test", "viwiki_test"]
 DS_LABEL = {"syn_test": "Syn-test", "vsec_test": "VSEC-test", "viwiki_test": "Viwiki-test",
             "syn_val": "Syn-val", "syn_train": "Syn-train"}
 MODEL_LABEL = {"ngram": "A: n-gram (3-gram KN)", "bartpho": "C: BARTpho", "identity": "Đồng nhất",
-               "bilstm": "B: BiLSTM"}
+               "bilstm": "B: BiLSTM", "bartpho_v1unk": "C: BARTpho v2 (lỗi <unk>)"}
+# Ablation C (mật độ nhiễu khi sinh dữ liệu train): tag -> (mật độ, nhãn)
+ABLATION_C = {"bartpho_d05": (0.05, "5% · 50k · 1 ep"), "bartpho_d12": (0.12, "12% · 50k · 1 ep"),
+              "bartpho_d25": (0.25, "25% · 50k · 1 ep"), "bartpho": (0.12, "12% · 150k · 3 ep\n(mô hình chính)")}
 CAT_LABEL = {"sua_dung": "Sửa đúng", "sua_sai": "Sửa sai ứng viên", "bo_sot": "Bỏ sót",
              "sua_qua_tay": "Sửa quá tay"}
 SUB_LABEL = {"so_ky_hieu": "Số/ký hiệu", "ten_rieng": "Tên riêng/viết hoa",
@@ -671,6 +674,79 @@ def comparison_examples(per_sent, models, rng, start) -> list[str]:
     return md
 
 
+# ---------------------------------------------------------------------------- 6. A vs C theo kiểu lỗi thật
+def ab_recall_rows(per_sent, models: list[str], lexicon: set[str]) -> list[dict]:
+    """Recall sửa lỗi trên lỗi thật, tách theo (a) lỗi tạo ra từ không có thật / từ có thật trong từ điển,
+    (b) kiểu lỗi suy từ cặp (sai, đúng). Lỗi từ có thật (vd giảm→giam) chỉ phát hiện được nhờ ngữ cảnh."""
+    rows = []
+    for m in models:
+        for ds in ["vsec_test", "viwiki_test"]:
+            if (m, ds) not in per_sent:
+                continue
+            tot, ok = Counter(), Counter()
+            for it in per_sent[(m, ds)][1]:
+                for x in it:
+                    if x["cat"] not in ("sua_dung", "sua_sai", "bo_sot") or not _HAS_LETTER.search(x["src_tok"]):
+                        continue
+                    word = "Lỗi ra từ có thật" if x["src_tok"].lower() in lexicon else "Lỗi ra từ không có thật"
+                    for key in [("loai_tu", word), ("kieu_loi", real_error_kind(x["src_tok"], x["gold_str"]))]:
+                        tot[key] += 1
+                        ok[key] += x["cat"] == "sua_dung"
+            for (group, kind), n in sorted(tot.items()):
+                rows.append({"model": m, "dataset": ds, "group": group, "kind": kind, "n": n,
+                             "cor_r": round(ok[(group, kind)] / n, 4)})
+    return rows
+
+
+def run_ab_figures(rows: list[dict], models: list[str], tab_dir: Path, fig_dir: Path) -> None:
+    plt = _plt()
+    # (1) Recall theo loại từ gốc (không có thật / có thật), VSEC và Viwiki
+    kinds = ["Lỗi ra từ không có thật", "Lỗi ra từ có thật"]
+    d = {(r["model"], r["dataset"], r["kind"]): r for r in rows if r["group"] == "loai_tu"}
+    if d:
+        fig, axes = plt.subplots(1, 2, figsize=(10, 3.8), sharey=True)
+        for ax, ds in zip(axes, ["vsec_test", "viwiki_test"]):
+            w = 0.8 / len(models)
+            for k, m in enumerate(models):
+                vals = [float(d[(m, ds, kd)]["cor_r"]) if (m, ds, kd) in d else 0 for kd in kinds]
+                bars = ax.bar([i + (k - (len(models) - 1) / 2) * w for i in range(len(kinds))], vals, w,
+                              color=COLORS[k], label=MODEL_LABEL.get(m, m))
+                _bar_labels(ax, bars)
+            ns = [d.get((models[0], ds, kd), {}).get("n", "?") for kd in kinds]
+            ax.set_xticks(range(len(kinds)), [f"{kd}\n(n={n})" for kd, n in zip(kinds, ns)])
+            ax.set_title(DS_LABEL[ds])
+            ax.set_ylim(0, 1.05)
+        axes[0].set_ylabel("Correction recall")
+        axes[0].legend(fontsize=8)
+        fig.suptitle("Recall trên lỗi thật: lỗi tạo ra từ không có thật và lỗi tạo ra từ có thật")
+        _save(fig, fig_dir, "ab_recall_word_kind.png")
+
+    # (2) Ablation C: mật độ nhiễu và quy mô train, trên VSEC-test
+    main = {(r["model"], r["dataset"]): r for r in _read_csv(tab_dir / "main_results.csv")}
+    abl = [m for m in ABLATION_C if (m, "vsec_test") in main]
+    if len(abl) >= 2:
+        out = []
+        for m in abl:
+            r = main[(m, "vsec_test")]
+            out.append({"model": m, "density": ABLATION_C[m][0], "setting": ABLATION_C[m][1].replace("\n", " "),
+                        **{k: r[k] for k in ["cor_p", "cor_r", "cor_f1", "over_correction"]}})
+        write_csv(tab_dir / "ablation_noise_density.csv", out)
+        metrics = [("cor_p", "Precision"), ("cor_r", "Recall"), ("cor_f1", "F1"), ("over_correction", "Sửa quá tay")]
+        fig, ax = plt.subplots(figsize=(9, 4))
+        w = 0.8 / len(abl)
+        for k, m in enumerate(abl):
+            vals = [float(main[(m, "vsec_test")][key]) for key, _ in metrics]
+            bars = ax.bar([i + (k - (len(abl) - 1) / 2) * w for i in range(len(metrics))], vals, w,
+                          color=COLORS[k], label=ABLATION_C[m][1].replace("\n", " "))
+            _bar_labels(ax, bars)
+        ax.set_xticks(range(len(metrics)), [lab for _, lab in metrics])
+        ax.set_ylim(0, 1.05)
+        ax.set_title("Ablation C trên VSEC-test: mật độ nhiễu khi sinh dữ liệu train")
+        ax.legend(fontsize=8, ncol=2)
+        _save(fig, fig_dir, "ablation_noise_density.png")
+    plt.close("all")
+
+
 # ---------------------------------------------------------------------------- main
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -714,6 +790,9 @@ def main() -> None:
         run_examples(per_sent, args.models, tab_dir, hyp, args.seed)
         if len(args.models) >= 2:
             write_csv(tab_dir / "model_comparison.csv", comparison_rows(per_sent, args.models))
+            ab_rows = ab_recall_rows(per_sent, args.models, lexicon)
+            write_csv(tab_dir / "ab_recall_by_kind.csv", ab_rows)
+            run_ab_figures(ab_rows, args.models, tab_dir, fig_dir)
     if "results" in steps:
         run_results(tab_dir, fig_dir, breakdown, args.models)
 

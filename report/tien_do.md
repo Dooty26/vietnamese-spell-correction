@@ -90,7 +90,7 @@ Ký hiệu: 🤖 Claude làm được trên máy này · 🧑 cần người ch�
 
 ### Đợt 3: phụ thuộc S2
 
-**S5b. Phân tích A vs C** 🤖 ⏱ ½ phiên
+**S5b. Phân tích A vs C** ✅ *(26/11: report/phan_tich_A_vs_C.md; nguyên nhân chính: lệch phân bố loại lỗi, sai dấu thanh 6,6% trong train so với 49,6% trong VSEC; ví dụ 15–23 trong error_examples.md; bảng ab_recall_by_kind, model_comparison, ablation_noise_density)* 🤖 ⏱ ½ phiên
 - Chạy lại `analyze_errors.py` có thêm C.
 - Chọn 5–10 ví dụ cuối cùng: A đúng C sai, C đúng A sai, cả hai sai. Kèm phân tích từng ví dụ.
 
