@@ -44,8 +44,9 @@ ROOT = Path(__file__).resolve().parents[1]
 DATASETS = ["syn_test", "vsec_test", "viwiki_test"]
 DS_LABEL = {"syn_test": "Syn-test", "vsec_test": "VSEC-test", "viwiki_test": "Viwiki-test",
             "syn_val": "Syn-val", "syn_train": "Syn-train"}
-MODEL_LABEL = {"ngram": "A: n-gram (3-gram KN)", "bartpho": "C: BARTpho", "identity": "Đồng nhất",
-               "bilstm": "B: BiLSTM", "bartpho_v1unk": "C: BARTpho v2 (lỗi <unk>)"}
+MODEL_LABEL = {"ngram": "A: n-gram (3-gram KN)", "bartpho": "C: BARTpho v3", "identity": "Đồng nhất",
+               "bilstm": "B: BiLSTM", "bartpho_v1unk": "C: BARTpho v2 (lỗi <unk>)",
+               "bartpho_v4": "C: BARTpho v4 (nhiễu dấu)", "bartpho_d12": "C: BARTpho d12 (50k, 1 ep)"}
 # Ablation C (mật độ nhiễu khi sinh dữ liệu train): tag -> (mật độ, nhãn)
 ABLATION_C = {"bartpho_d05": (0.05, "5% · 50k · 1 ep"), "bartpho_d12": (0.12, "12% · 50k · 1 ep"),
               "bartpho_d25": (0.25, "25% · 50k · 1 ep"), "bartpho": (0.12, "12% · 150k · 3 ep\n(mô hình chính)")}

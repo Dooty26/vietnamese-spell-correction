@@ -146,7 +146,7 @@ In **đậm**: ở `src` là vị trí lỗi thật hoặc bị mô hình sửa;
 | neu_bo_qua_ten_rieng+ngoai_tu_dien+so_ky_hieu | 0.3634 | F1 nếu không sửa nhóm này: P=0.338 R=0.393 (mất 145 sửa đúng) |
 | top_overcorrections | manga→mang (29); Nero→Nào (18); kỉ→kỷ (15); Gin→Giá (15); Nero→Neo (15); Khun→Khu (15); c→có (14); lb→lễ (13); and→anh (13); bạn→bàn (13); điốt→điểm (12); biến→tiến (10); trưởng→trường (10); Mao→Mai (10); Thự→Thọ (10) |  |
 
-## So sánh A: n-gram (3-gram KN) và C: BARTpho
+## So sánh A: n-gram (3-gram KN) và C: BARTpho v3
 
 **Ví dụ 15. ngram đúng, bartpho sai [viwiki-6810-547]**
 
@@ -210,3 +210,68 @@ In **đậm**: ở `src` là vị trí lỗi thật hoặc bị mô hình sửa;
 - ngram: Tết thì **không** thể thiếu hoa đào , hoa **hồi** , vẫn bánh chưng và không khí nhộn nhịp của ngày Tết …
 - bartpho: Tết thì **không** thể thiếu hoa đào , hoa hai , vẫn bánh chưng và không khí nhộn nhịp của ngày Tết …
 - tgt : Tết thì **không** thể thiếu hoa đào , hoa **mai** , vẫn bánh chưng và không khí nhộn nhịp của ngày Tết …
+
+## So sánh A: n-gram (3-gram KN) và C: BARTpho v4 (nhiễu dấu)
+
+**Ví dụ 24. ngram đúng, bartpho_v4 sai [vsec-6850]**
+
+- src : Tuy nhiên , có một số câu hỏi cần phải **đều** chỉnh lại từ ngữ sao cho phù hợp và dễ hiểu .
+- ngram: Tuy nhiên , có một số câu hỏi cần phải **điều** chỉnh lại từ ngữ sao cho phù hợp và dễ hiểu .
+- bartpho_v4: Tuy nhiên , có một số câu hỏi cần phải đều chỉnh lại từ ngữ sao cho phù hợp và dễ hiểu .
+- tgt : Tuy nhiên , có một số câu hỏi cần phải **điều** chỉnh lại từ ngữ sao cho phù hợp và dễ hiểu .
+
+**Ví dụ 25. ngram đúng, bartpho_v4 sai [syn_test-1984]**
+
+- src : … xúc khi nghe những thông tin không được kiểm chứng về đàn **chỉ** .
+- ngram: … xúc khi nghe những thông tin không được kiểm chứng về đàn **chị** .
+- bartpho_v4: … xúc khi nghe những thông tin không được kiểm chứng về đàn chỉ .
+- tgt : … xúc khi nghe những thông tin không được kiểm chứng về đàn **chị** .
+
+**Ví dụ 26. ngram đúng, bartpho_v4 sai [viwiki-3046-98]**
+
+- src : … các sự kiện quần chúng , thì sẽ giảm xuống là 9 **met** .
+- ngram: … các sự kiện quần chúng , thì sẽ giảm xuống là 9 **mét** .
+- bartpho_v4: … các sự kiện quần chúng , thì sẽ giảm xuống là 9 met .
+- tgt : … các sự kiện quần chúng , thì sẽ giảm xuống là 9 **mét** .
+
+**Ví dụ 27. bartpho_v4 đúng, ngram sai [vsec-8827]**
+
+- src : … bản RCP4 . 5 , vào cuối thế kỷ , nhiệt độ **tôi** cao tăng 2.8 độ , nhiệt độ tối thấp tăng 2.3 độ …
+- ngram: … bản RCP4 . 5 , vào cuối thế kỷ , nhiệt độ tôi cao tăng 2.8 độ , nhiệt độ tối thấp tăng 2.3 độ …
+- bartpho_v4: … bản RCP4 . 5 , vào cuối thế kỷ , nhiệt độ **tối** cao tăng 2.8 độ , nhiệt độ tối thấp tăng 2.3 độ …
+- tgt : … bản RCP4 . 5 , vào cuối thế kỷ , nhiệt độ **tối** cao tăng 2.8 độ , nhiệt độ tối thấp tăng 2.3 độ …
+
+**Ví dụ 28. bartpho_v4 đúng, ngram sai [syn_test-3712]**
+
+- src : Riêng với các doanh nghiệp trên địa bàn tỉnh **Yồng** **Nai** , cơ quan thuế đã dừng tính tiền chậm nộp 73,7 …
+- ngram: Riêng với các doanh nghiệp trên địa bàn tỉnh **Yong** **Nam** , cơ quan thuế đã dừng tính tiền chậm nộp 73,7 …
+- bartpho_v4: Riêng với các doanh nghiệp trên địa bàn tỉnh **Đồng** Nai , cơ quan thuế đã dừng tính tiền chậm nộp 73,7 …
+- tgt : Riêng với các doanh nghiệp trên địa bàn tỉnh **Đồng** Nai , cơ quan thuế đã dừng tính tiền chậm nộp 73,7 …
+
+**Ví dụ 29. bartpho_v4 đúng, ngram sai [viwiki-11033-46]**
+
+- src : … tất cả các phe phái trong " Empire Earth " đều có **thưc** trong lịch sử .
+- ngram: … tất cả các phe phái trong " Empire Earth " đều có **thể** trong lịch sử .
+- bartpho_v4: … tất cả các phe phái trong " Empire Earth " đều có **thực** trong lịch sử .
+- tgt : … tất cả các phe phái trong " Empire Earth " đều có **thực** trong lịch sử .
+
+**Ví dụ 30. cả hai sai [vsec-9275]**
+
+- src : … rõ ràng đã làm mất niềm tin và sự hài lòng của **khác** nhiều sinh viên .
+- ngram: … rõ ràng đã làm mất niềm tin và sự hài lòng của khác nhiều sinh viên .
+- bartpho_v4: … rõ ràng đã làm mất niềm tin và sự hài lòng của khác nhiều sinh viên .
+- tgt : … rõ ràng đã làm mất niềm tin và sự hài lòng của **khá** nhiều sinh viên .
+
+**Ví dụ 31. cả hai sai [viwiki-8390-149]**
+
+- src : … mình bị Chúa tể Voldemort giết chết , vì đã lên tiếng **bên** vực cho dân Muggle và những phù thủy Máu bùn .
+- ngram: … mình bị Chúa tể Voldemort giết chết , vì đã lên tiếng bên vực cho dân Muggle và những phù thủy Máu bùn .
+- bartpho_v4: … mình bị Chúa tể Voldemort giết chết , vì đã lên tiếng bên vực cho dân Muggle và những phù thủy Máu bùn .
+- tgt : … mình bị Chúa tể Voldemort giết chết , vì đã lên tiếng **bênh** vực cho dân Muggle và những phù thủy Máu bùn .
+
+**Ví dụ 32. cả hai sai [syn_test-495]**
+
+- src : … tác **nghiệo** của Phó Tổng Biên tập Báo Tiền phong - Phùng **Sưing** cũng rất hữu ích **tro** phóng viên .
+- ngram: … tác **nghiệp** của Phó Tổng Biên tập Báo Tiền phong - Phùng Sưing cũng rất hữu ích **cho** phóng viên .
+- bartpho_v4: … tác **nghiệp** của Phó Tổng Biên tập Báo Tiền phong - Phùng **Sơn** cũng rất hữu ích **cho** phóng viên .
+- tgt : … tác **nghiệp** của Phó Tổng Biên tập Báo Tiền phong - Phùng **Sưởng** cũng rất hữu ích **cho** phóng viên .

@@ -14,7 +14,7 @@
 | **Mô hình A** | Tự cài n-gram LM + noisy channel + beam search; đã chỉnh tham số trên VSEC-dev | `src/vspell/models/ngram_*.py` |
 | Kết quả A | Cor F1: Syn 0,90 · VSEC 0,78 · Viwiki 0,30 | `outputs/tables/main_results.csv` |
 | Ablation A | Bậc 2/3/4 × Laplace/KN; perplexity | `outputs/tables/ngram_perplexity.csv` |
-| Test | 65 test pass | `tests/` |
+| Test | 75 test pass | `tests/` |
 
 **Phát hiện mới (S5a):** sửa quá tay trên Viwiki chủ yếu do lỗi thật quá ít (0,29%): tỉ lệ sửa quá tay trên token sạch 0,48% (VSEC 0,33%), nhưng bằng 1,64× số lỗi thật. 45% là từ thường, 35% ngoài từ điển (manga→mang), 21% tên riêng. Nghi chuẩn hóa chưa gộp biến thể i/y (`kỉ→kỷ` 15 lần). *26/11 đã kiểm tra:* đúng là do A đổi i→y (lí→lý, kì→kỳ, kĩ→kỹ, kỉ→kỷ, Mĩ→Mỹ), chiếm 54/783 ca sửa quá tay của A trên VSEC và 51/2526 trên Viwiki; BARTpho gần như không mắc. Ảnh hưởng nhỏ (precision của A tăng khoảng 0,5 điểm nếu sửa).
 
@@ -22,6 +22,7 @@
 
 - [x] **Mô hình C (BARTpho)**: v3 xong 26/11 (Kaggle 2×T4, 5,6 giờ). VSEC cor_f1 0,536, over-correction 0,026; Syn-test cor_f1 0,959; Viwiki cor_f1 0,240.
 - [x] Ablation C (mật độ nhiễu 5/12/25%, 50k cặp × 1 epoch, Colab): VSEC cor_f1 0,572 / 0,622 / 0,624. Cả 3 đều cao hơn mô hình đầy đủ (150k × 3 epoch, 0,536) → train lâu trên dữ liệu tổng hợp làm giảm khả năng chuyển sang lỗi thật (recall 0,38 so với 0,48).
+- [x] **BARTpho v4** (nhiễu giàu lỗi dấu thanh/dấu phụ, 50k × 1 epoch, Colab 26/11): VSEC cor_f1 0,749 (d12: 0,622; A: 0,778), Viwiki 0,322 (vượt A 0,304), Syn 0,912. Xác nhận giả thuyết lệch phân bố loại lỗi (`report/phan_tich_A_vs_C.md` mục 4.2, ví dụ 24–32). Checkpoint v4 chưa lưu về máy; demo vẫn dùng v3.
 - [x] Bảng so sánh A vs C (`main_results.csv`, `model_comparison.csv`, `ab_recall_by_kind.csv`)
 - [x] Ví dụ lỗi và hình A vs C (S5b: `report/phan_tich_A_vs_C.md`, ví dụ 15–23)
 - [x] Demo Gradio với A và C (S6b)
