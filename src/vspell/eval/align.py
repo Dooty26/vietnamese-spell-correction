@@ -105,6 +105,11 @@ def align(src_tokens: list[str], other_tokens: list[str]) -> list[tuple[int | No
 
 
 def _changes(src_tokens: list[str], other_tokens: list[str]) -> dict[int, str]:
+    # Vị trí được neo vào âm tiết src: nguồn rỗng không có chỗ để ghi phần sinh thêm, nên nếu bỏ qua thì
+    # nội dung thừa không bị tính vào precision. Từ chối thay vì chấm sai.
+    if not src_tokens and other_tokens:
+        raise ValueError(f"Câu nguồn rỗng nhưng câu đích/dự đoán có {len(other_tokens)} âm tiết "
+                         f"({' '.join(other_tokens[:5])!r}…): không căn chỉnh được theo vị trí âm tiết nguồn")
     changes: dict[int, str] = {}
     for tag, i1, i2, j1, j2 in opcodes(src_tokens, other_tokens):
         if tag == "equal":
@@ -115,7 +120,7 @@ def _changes(src_tokens: list[str], other_tokens: list[str]) -> dict[int, str]:
                 anchor = i1 - 1
                 prev = changes.get(anchor, src_tokens[anchor])
                 changes[anchor] = " ".join(t for t in [prev, *new] if t)
-            elif src_tokens:
+            else:
                 changes[0] = " ".join([*new, changes.get(0, src_tokens[0])])
             continue
         n_src = i2 - i1

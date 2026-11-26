@@ -6,6 +6,9 @@ Khi đã có outputs/predictions/bartpho__*.jsonl:
     PYTHONPATH=src python -X utf8 scripts/analyze_errors.py --models ngram bartpho
 -> thêm bảng A vs C (model_comparison.csv) và các nhóm ví dụ "A đúng C sai" / "C đúng A sai".
 
+Trước khi phân tích, mỗi file dự đoán được đối chiếu id/src/tgt với data/processed/{dataset}.jsonl
+(như evaluate.py): file chạy với --limit hoặc lệch tập câu làm script dừng. --allow-mismatch: bỏ qua.
+
 Phân loại mỗi vị trí âm tiết (theo chỉ số src, cùng cách căn chỉnh với vspell.eval.metrics):
     sua_dung     : vị trí lỗi thật, mô hình sửa đúng chuỗi tgt
     sua_sai      : vị trí lỗi thật, mô hình có sửa nhưng chọn sai ứng viên
@@ -37,6 +40,7 @@ from pathlib import Path
 
 from vspell.eval.align import edit_positions, error_positions
 from vspell.eval.metrics import _div, _f1
+from vspell.eval.sentences import check_against_gold
 from vspell.models.ngram_corrector import osa_distance
 from vspell.normalize import normalize, remove_diacritics, split_syllables, split_tone
 from vspell.utils import get_logger, read_jsonl
@@ -422,14 +426,32 @@ def run_results(tab_dir: Path, fig_dir: Path, breakdown: list[dict], models: lis
 
 
 # ---------------------------------------------------------------------------- 3. phân tích lỗi
-def run_breakdown(pred_dir: Path, models: list[str], lexicon: set[str]):
-    rows, per_sent = [], {}
-    for m in models:
-        for ds in DATASETS:
+def load_checked(pred_dir: Path, models: list[str], data_dir: Path | None) -> dict:
+    """{(model, dataset): bản ghi}. Mỗi file phải cùng tập câu (id/src/tgt) với data_dir/{dataset}.jsonl
+    (hoặc với file của mô hình khác nếu không có tập gốc); data_dir=None: bỏ qua kiểm tra."""
+    out = {}
+    for ds in DATASETS:
+        files = {}
+        for m in models:
             recs = load_preds(pred_dir, m, ds)
             if recs is None:
                 log.warning("Bỏ qua %s__%s (không có file dự đoán)", m, ds)
                 continue
+            files[f"{m}__{ds}.jsonl"] = recs
+            out[(m, ds)] = recs
+        if files and data_dir is not None:
+            check_against_gold(files, data_dir / f"{ds}.jsonl", log)
+    return out
+
+
+def run_breakdown(pred_dir: Path, models: list[str], lexicon: set[str], data_dir: Path | None = None):
+    rows, per_sent = [], {}
+    loaded = load_checked(pred_dir, models, data_dir)
+    for m in models:
+        for ds in DATASETS:
+            if (m, ds) not in loaded:
+                continue
+            recs = loaded[(m, ds)]
             items = [classify_sentence(r["src"], r["pred"], r["tgt"], lexicon) for r in recs]
             per_sent[(m, ds)] = (recs, items)
             cat = Counter(x["cat"] for it in items for x in it)
@@ -787,6 +809,8 @@ def main() -> None:
     ap.add_argument("--steps", default="eda,errors,results", help="tập con của eda,errors,results")
     ap.add_argument("--n-train", type=int, default=20000, help="số câu syn_train đầu tiên đưa vào EDA")
     ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--allow-mismatch", action="store_true",
+                    help="không đối chiếu id/src/tgt của file dự đoán với tập gốc (chỉ để thử nhanh)")
     args = ap.parse_args()
 
     def find(rel: str, given: str | None) -> Path:
@@ -810,7 +834,8 @@ def main() -> None:
     breakdown, per_sent = [], {}
     if steps & {"errors", "results"}:
         lexicon = load_lexicon(lex_path)
-        breakdown, per_sent = run_breakdown(pred_dir, args.models, lexicon)
+        breakdown, per_sent = run_breakdown(pred_dir, args.models, lexicon,
+                                            None if args.allow_mismatch else data_dir)
         write_csv(tab_dir / "error_breakdown.csv", breakdown)
     if "errors" in steps:
         hyp = viwiki_hypothesis(per_sent, args.models[0], lexicon, tab_dir)

@@ -67,3 +67,13 @@ def test_alignment_insert_delete_and_edges():
     assert error_positions(s, s) == {} and error_positions([], []) == {}
     assert opcodes(["a", "b"], ["a", "b"]) == [("equal", 0, 2, 0, 2)]
     assert opcodes(["x"], ["y", "z"]) == [("replace", 0, 1, 0, 2)]
+
+
+def test_empty_source_with_generated_text_is_rejected():
+    import pytest
+    with pytest.raises(ValueError, match="nguồn rỗng"):
+        evaluate(["đều", ""], ["điều", "xin chào"], ["điều", ""])
+    with pytest.raises(ValueError, match="nguồn rỗng"):
+        evaluate([""], [""], ["xin chào"])
+    m = evaluate(["đều", ""], ["điều", ""], ["điều", ""])  # nguồn rỗng, không sinh gì: vẫn chấm được
+    assert m["cor_f1"] == 1.0

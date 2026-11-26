@@ -70,3 +70,28 @@ def test_viwiki_hypothesis_identity_model_no_zero_division(tmp_path):
     assert out["n_edits"] == 0 and out["cor_p"] == out["cor_r"] == out["cor_f1"] == 0
     assert (tmp_path / "overcorrection_viwiki.csv").exists()
     ae.viwiki_hypothesis({("identity", "viwiki_test"): _per_sent(rows[1:])}, "identity", LEX, tmp_path)  # 0 lỗi thật
+
+
+def test_breakdown_checks_predictions_against_gold(tmp_path):
+    import json
+
+    import pytest
+
+    gold = [dict(id=i, src="đều chỉnh", tgt="điều chỉnh") for i in range(3)]
+    data, pred = tmp_path / "data", tmp_path / "pred"
+    data.mkdir(), pred.mkdir()
+
+    def write(path, recs):
+        path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in recs), encoding="utf-8")
+
+    write(data / "vsec_test.jsonl", gold)
+    full = [dict(r, pred=r["tgt"]) for r in gold]
+    write(pred / "A__vsec_test.jsonl", full[:2])   # A và B cùng chạy --limit 2: khớp nhau nhưng thiếu câu
+    write(pred / "B__vsec_test.jsonl", full[:2])
+    with pytest.raises(ValueError, match="thiếu 1"):
+        ae.run_breakdown(pred, ["A", "B"], LEX, data)
+    ae.run_breakdown(pred, ["A", "B"], LEX, None)  # --allow-mismatch
+    write(pred / "A__vsec_test.jsonl", full)
+    write(pred / "B__vsec_test.jsonl", full[::-1])
+    rows, per_sent = ae.run_breakdown(pred, ["A", "B"], LEX, data)
+    assert set(per_sent) == {("A", "vsec_test"), ("B", "vsec_test")}
