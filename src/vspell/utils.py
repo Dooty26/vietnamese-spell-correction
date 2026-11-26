@@ -1,10 +1,13 @@
 """Tiện ích chung: seed, logging, đọc/ghi JSONL và YAML."""
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
+import platform
 import random
+import subprocess
 import urllib.request
 from pathlib import Path
 from typing import Iterable, Iterator
@@ -71,3 +74,55 @@ def download_atomic(url: str, dest: str | Path) -> Path:
     finally:
         tmp.unlink(missing_ok=True)
     return dest
+
+
+def sha256_file(path: str | Path, chunk: int = 1 << 20) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        while block := f.read(chunk):
+            h.update(block)
+    return h.hexdigest()
+
+
+def run_provenance(files: dict[str, str | Path] | None = None,
+                   packages: Iterable[str] = ("torch", "transformers", "datasets", "accelerate", "sentencepiece",
+                                              "huggingface_hub", "pyarrow", "numpy")) -> dict:
+    """Hồ sơ một lần chạy để tái lập: commit repo (+ có sửa đổi chưa commit), phiên bản Python/thư viện thực tế,
+    SHA-256 của các file đầu vào. Mục nào không lấy được thì ghi None thay vì làm hỏng lần chạy."""
+    from importlib import metadata
+
+    def git(*args: str) -> str | None:
+        try:
+            return subprocess.run(["git", *args], capture_output=True, text=True, check=True,
+                                  cwd=Path(__file__).resolve().parent).stdout.strip()
+        except (OSError, subprocess.CalledProcessError):
+            return None
+
+    versions = {}
+    for pkg in packages:
+        try:
+            versions[pkg] = metadata.version(pkg)
+        except metadata.PackageNotFoundError:
+            versions[pkg] = None
+    status = git("status", "--porcelain", "--untracked-files=no")
+    return {
+        "git_commit": git("rev-parse", "HEAD"),
+        "git_dirty": None if status is None else bool(status),
+        "python": platform.python_version(),
+        "packages": versions,
+        "files_sha256": {k: sha256_file(v) if Path(v).exists() else None for k, v in (files or {}).items()},
+    }
+
+
+def resolve_hf_revision(repo_id: str, revision: str | None, repo_type: str = "model") -> str | None:
+    """Đổi revision (nhánh/tag/None = main) thành mã commit cố định trên Hugging Face Hub; None nếu repo_id là
+    thư mục cục bộ hoặc không truy cập được Hub."""
+    if Path(repo_id).exists():
+        return None
+    try:
+        from huggingface_hub import HfApi
+        info = (HfApi().model_info if repo_type == "model" else HfApi().dataset_info)(repo_id, revision=revision)
+        return info.sha
+    except Exception as e:  # offline, repo riêng tư...
+        get_logger().warning("Không xác định được commit của %s@%s trên Hub: %s", repo_id, revision, e)
+        return None

@@ -42,6 +42,8 @@ Correction F1 mức âm tiết (`outputs/tables/main_results.csv`; phân tích: 
 
 *A + S4 và C v4 được thiết kế sau khi phân tích lỗi trên tập kiểm tra (luật S4 từ lỗi của A trên Viwiki-test, tỉ lệ lỗi của v4 theo phân bố VSEC-test); tham số S4 chọn trên VSEC-dev. Hai dòng này là kết quả phát triển, chưa phải đánh giá độc lập; xem `report/phan_tich_A_vs_C.md` mục 4.2.*
 
+Thiết kế của hai biến thể này được **đóng băng**: luật và tham số S4 trong `outputs/checkpoints/ngram/o3_kneser_ney_s4/config.json`, bộ sinh nhiễu `configs/noise_v4.yaml` và checkpoint `outputs/checkpoints/bartpho_v4/best`. Không chỉnh thêm theo VSEC-test/Viwiki-test; muốn khẳng định hiệu quả cần chấm đúng các cấu hình này trên một tập lỗi thật chưa từng được dùng để phân tích hay thiết kế (nhóm chưa có tập như vậy). Cho tới lúc đó, các mức F1 0,784/0,453 (S4) và 0,749/0,322 (v4) chỉ được trích dẫn là kết quả phát triển.
+
 Ablation: A theo bậc n-gram × smoothing (`ngram_perplexity.csv`); C theo mật độ nhiễu 5/12/25% (`ablation_noise_density.csv`) và loại lỗi sinh nhiễu (v4 so với d12).
 
 ## Tải sẵn dữ liệu và checkpoint
@@ -84,6 +86,13 @@ python scripts/analyze_errors.py --models ngram bartpho bartpho_v4 --steps eda,e
 python demo/app.py
 ```
 Trên Windows thêm `-X utf8` sau `python` (vd `python -X utf8 scripts/evaluate.py`).
+
+**Hồ sơ tái lập.** Mỗi lần chạy ghi lại đủ thông tin để biết nó dùng mã, thư viện và dữ liệu nào:
+- `train_bartpho.py` ghi vào `best/vspell_config.json`: `model_commit` (commit của `vinai/bartpho-syllable` trên Hub, cố định bằng `model_revision` trong `configs/bartpho.yaml`) và `provenance` (commit repo + có sửa đổi chưa commit, phiên bản Python/thư viện, SHA-256 của tập train/val).
+- `prepare_data.py` ghi commit dataset Binhvq (`binhvq.revision` trong `configs/data.yaml`) cùng SHA-256 các file câu sạch vào `stats_binhvq.json`, và SHA-256 của VSEC/Viwiki gốc vào `stats_real.json`.
+- `notebooks/04_bartpho.ipynb` mặc định cài đúng `requirements-bartpho.txt` (`PIN_VERSIONS = True`) và có thể chạy lại đúng một commit (`COMMIT`).
+
+Hai checkpoint hiện có được train trước khi có cơ chế này: `bartpho/best/vspell_config.json` (v3) là bản dựng lại, chỉ có trọng số tải từ Kaggle, còn tokenizer/config chép từ checkpoint chạy thử; phiên bản thư viện lúc train v3/v4 không được lưu (bộ trong `requirements-bartpho.txt` là bộ đã chạy dự đoán và chấm điểm). Tương tự, `data/processed` hiện tại được sinh trước khi `stats_binhvq.json` ghi commit của Binhvq; bản dùng cho bảng kết quả là bộ trong `data_processed.zip` (mục *Tải sẵn dữ liệu và checkpoint*).
 
 ## Ablation mật độ nhiễu
 Ba tập train 50k cặp từ cùng 50k câu đầu của `clean_syn_train.txt`, cùng seed 42, chỉ khác `--error-rate` (5% / 12% / 25% âm tiết hợp lệ bị lỗi). Thống kê: `outputs/tables/noise_density_stats.csv`.

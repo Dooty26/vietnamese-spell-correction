@@ -16,7 +16,7 @@ import re
 import unicodedata
 
 from vspell.normalize import normalize, parse_syllable, split_tone
-from vspell.utils import get_logger, read_jsonl
+from vspell.utils import get_logger, read_jsonl, resolve_hf_revision, run_provenance
 
 log = get_logger()
 
@@ -57,12 +57,16 @@ def postprocess(src: str, text: str) -> str:
 # ---------------------------------------------------------------- dữ liệu
 
 def load_pairs(path: str | Path, limit: int | None = None) -> list[dict]:
-    """Đọc JSONL -> [{"src", "tgt"}] đã chuẩn hóa. `limit`: chỉ lấy N cặp đầu."""
+    """Đọc JSONL -> [{"src", "tgt"}] đã chuẩn hóa. `limit`: chỉ lấy N cặp đầu (N ≥ 1); None = toàn bộ."""
+    if limit is not None and (isinstance(limit, bool) or not isinstance(limit, int) or limit < 1):
+        raise ValueError(f"limit phải là số nguyên ≥ 1 hoặc None (toàn bộ), nhận {limit!r}")
     pairs = []
     for r in read_jsonl(path):
         pairs.append({"src": normalize(r["src"]), "tgt": normalize(r["tgt"])})
         if limit is not None and len(pairs) >= limit:
             break
+    if not pairs:
+        raise ValueError(f"{path}: không có cặp nào")
     return pairs
 
 
@@ -147,8 +151,13 @@ def train(config: dict, train_path: str, val_path: str) -> str:
                               Seq2SeqTrainer, Seq2SeqTrainingArguments)
 
     out_dir = Path(config["output_dir"])
-    tokenizer = AutoTokenizer.from_pretrained(config["model_name"])
-    model = AutoModelForSeq2SeqLM.from_pretrained(config["model_name"])
+    # Cố định revision của mô hình nền: dùng commit đã ghi (model_revision) hoặc phân giải nhánh hiện tại thành
+    # mã commit, rồi tải đúng commit đó và ghi vào vspell_config.json.
+    model_commit = resolve_hf_revision(config["model_name"], config.get("model_revision"))
+    revision = model_commit or config.get("model_revision")
+    rev_kw = {"revision": revision} if revision else {}
+    tokenizer = AutoTokenizer.from_pretrained(config["model_name"], **rev_kw)
+    model = AutoModelForSeq2SeqLM.from_pretrained(config["model_name"], **rev_kw)
     train_ds, val_ds = build_datasets(train_path, val_path, tokenizer, config)
 
     cuda = torch.cuda.is_available()
@@ -227,7 +236,9 @@ def train(config: dict, train_path: str, val_path: str) -> str:
             "metric_for_best_model": metric, "global_step": trainer.state.global_step,
             "final_eval": {k: (v if not isinstance(v, float) or math.isfinite(v) else None)
                            for k, v in metrics.items()},
-            "config": config}
+            "config": config,
+            "model_commit": model_commit,
+            "provenance": run_provenance({"train": train_path, "val": val_path})}
     (best / "vspell_config.json").write_text(json.dumps(info, ensure_ascii=False, indent=2, default=str),
                                              encoding="utf-8")
     log.info("Đã lưu mô hình tốt nhất vào %s", best)

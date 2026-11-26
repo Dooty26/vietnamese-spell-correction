@@ -15,7 +15,7 @@
 | Kết quả A | Cor F1: Syn 0,90 · VSEC 0,78 · Viwiki 0,30 | `outputs/tables/main_results.csv` |
 | Ablation A | Bậc 2/3/4 × Laplace/KN; perplexity | `outputs/tables/ngram_perplexity.csv` |
 | **S4: A + luật giảm sửa quá tay** | Viwiki Cor F1 0,304 → **0,453** (P 0,221 → 0,461), VSEC 0,778 → 0,784, Syn 0,898 → 0,860; chọn trên VSEC-dev theo F0.5 | `scripts/tune_ngram_s4.py`, `ablate_ngram_s4.py`, `ngram_s4_*.csv`, báo cáo mục 5.5 |
-| Test | 113 test pass | `tests/` |
+| Test | 120 test pass | `tests/` |
 
 **Phát hiện mới (S5a):** sửa quá tay trên Viwiki chủ yếu do lỗi thật quá ít (0,29%): tỉ lệ sửa quá tay trên token sạch 0,48% (VSEC 0,33%), nhưng bằng 1,64× số lỗi thật. 45% là từ thường, 35% ngoài từ điển (manga→mang), 21% tên riêng. Nghi chuẩn hóa chưa gộp biến thể i/y (`kỉ→kỷ` 15 lần). *26/11 đã kiểm tra:* đúng là do A đổi i→y (lí→lý, kì→kỳ, kĩ→kỹ, kỉ→kỷ, Mĩ→Mỹ), chiếm 54/783 ca sửa quá tay của A trên VSEC và 51/2526 trên Viwiki; BARTpho gần như không mắc. Ảnh hưởng nhỏ (precision của A tăng khoảng 0,5 điểm nếu sửa).
 

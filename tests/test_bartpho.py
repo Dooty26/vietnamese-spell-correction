@@ -83,6 +83,11 @@ def test_train_and_correct(tmp_path, tiny_model):
     best = train(cfg, tr, va)
     info = json.loads((tmp_path / "ckpt" / "best" / "vspell_config.json").read_text(encoding="utf-8"))
     assert info["global_step"] == 4 and info["best_checkpoint"] is not None
+    prov = info["provenance"]  # hồ sơ tái lập: commit, thư viện, hash dữ liệu
+    assert prov["packages"]["transformers"] and prov["python"]
+    from vspell.utils import sha256_file
+    assert prov["files_sha256"] == {"train": sha256_file(tr), "val": sha256_file(va)}
+    assert info["model_commit"] is None  # mô hình nền là thư mục cục bộ
 
     corr = BartphoCorrector(best, num_beams=2)
     sents = [s for s, _ in PAIRS[:4]] + ["Hàng hoá"]
@@ -142,3 +147,22 @@ def test_compute_metrics_uses_full_targets(tiny_model):
     assert m["sent_acc"] == 0.0
     whole = np.array(tok([full])["input_ids"])
     assert _make_compute_metrics(tok, [full], [full])((whole, whole))["sent_acc"] == 1.0
+
+
+@pytest.mark.parametrize("bad", [0, -1, 2.5, True])
+def test_load_pairs_rejects_non_positive_limit(tmp_path, bad):
+    p = _write_jsonl(tmp_path / "a.jsonl", PAIRS)
+    with pytest.raises(ValueError, match="limit"):
+        load_pairs(p, limit=bad)
+    assert len(load_pairs(p, limit=None)) == len(PAIRS)
+
+
+def test_train_cli_rejects_zero_limit():
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    r = subprocess.run([sys.executable, "-X", "utf8", str(root / "scripts" / "train_bartpho.py"), "--limit", "0"],
+                       capture_output=True, text=True, encoding="utf-8")
+    assert r.returncode == 2 and "--limit" in r.stderr

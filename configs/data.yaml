@@ -2,6 +2,7 @@ seed: 42
 
 binhvq:
   hf_id: vietgpt/binhvq_news_vi
+  revision: null             # mã commit dataset trên Hub; null = commit hiện tại của main (ghi vào stats_binhvq.json)
   # Bản HF không có mã bài báo: chia tập theo ĐOẠN văn (mỗi dòng parquet)
   max_row_groups: 2000       # giới hạn số row group đọc (mỗi row group 1.000 đoạn, ~600–800 câu sạch)
   min_syllables: 5

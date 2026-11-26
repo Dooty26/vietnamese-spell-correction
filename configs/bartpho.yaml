@@ -1,5 +1,6 @@
 # Mô hình C: fine-tune vinai/bartpho-syllable (~396M tham số) trên Syn-train
 model_name: vinai/bartpho-syllable
+model_revision: null            # mã commit trên Hub; null = commit hiện tại của main (ghi vào vspell_config.json: model_commit)
 seed: 42
 max_source_length: 128          # token; câu dài hơn bị cắt khi train (suy luận cho tới 256)
 max_target_length: 128

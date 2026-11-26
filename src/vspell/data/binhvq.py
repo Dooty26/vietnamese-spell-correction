@@ -21,10 +21,13 @@ _TAG = re.compile(r"<[^>]*>")
 _URL = re.compile(r"https?://\S+|www\.\S+")
 
 
-def stream_paragraphs(hf_id: str, n_row_groups: int, seed: int, workers: int = 8) -> Iterator[tuple[str, str]]:
+def stream_paragraphs(hf_id: str, n_row_groups: int, seed: int, workers: int = 8,
+                      revision: str | None = None) -> Iterator[tuple[str, str]]:
     """Đọc ngẫu nhiên n_row_groups row group (theo seed) trên mọi file parquet -> (paragraph_id, text).
 
     Tải song song bằng nhiều luồng nhưng vẫn trả về theo đúng thứ tự đã xáo (kết quả tái lập được).
+    `revision`: mã commit của dataset trên Hub (None = nhánh main hiện tại; nên truyền commit đã phân giải
+    để mọi file được đọc từ cùng một phiên bản, xem prepare_data.py).
     """
     from concurrent.futures import ThreadPoolExecutor
 
@@ -32,7 +35,8 @@ def stream_paragraphs(hf_id: str, n_row_groups: int, seed: int, workers: int = 8
     from huggingface_hub import HfFileSystem
 
     fs = HfFileSystem()
-    files = sorted(fs.glob(f"datasets/{hf_id}/data/*.parquet"))
+    repo = f"datasets/{hf_id}@{revision}" if revision else f"datasets/{hf_id}"
+    files = sorted(fs.glob(f"{repo}/data/*.parquet"))
     n_groups = [pq.ParquetFile(fs.open(f, "rb")).metadata.num_row_groups for f in files]
     pairs = [(fi, rg) for fi in range(len(files)) for rg in range(n_groups[fi])]
     random.Random(seed).shuffle(pairs)

@@ -104,6 +104,8 @@ Mục 2 cho thấy nguyên nhân chính khiến C thua trên lỗi thật là l�
 
 *Lưu ý về tính độc lập của tập kiểm tra. S4 và v4 là *thí nghiệm phát triển sau khi phân tích lỗi trên tập kiểm tra*: các luật S4 được thiết kế từ phân tích sửa quá tay của A trên Viwiki-test, còn tỉ lệ lỗi dấu thanh/dấu phụ của v4 được đặt theo phân bố lỗi của VSEC-test. Tham số số của S4 được chọn trên VSEC-dev và v4 không chỉnh gì thêm theo test, nhưng tập kiểm tra vẫn đã ảnh hưởng tới quyết định thiết kế. Vì vậy kết quả của A + S4 và C v4 trên VSEC-test/Viwiki-test có thể lạc quan hơn thực tế và chưa chứng minh được khả năng tổng quát hóa; muốn khẳng định cần đánh giá trên một tập lỗi thật chưa từng được xem (nhóm chưa có tập như vậy). Các kết quả của A, C v3 và các ablation mật độ nhiễu không chịu ảnh hưởng này.*
 
+*Thiết kế của hai biến thể này được **đóng băng**: luật và tham số S4 trong `outputs/checkpoints/ngram/o3_kneser_ney_s4/config.json`, bộ sinh nhiễu `configs/noise_v4.yaml` và checkpoint `outputs/checkpoints/bartpho_v4/best`. Không chỉnh thêm theo VSEC-test/Viwiki-test; muốn khẳng định hiệu quả cần chấm đúng các cấu hình này trên một tập lỗi thật chưa từng được dùng để phân tích hay thiết kế (nhóm chưa có tập như vậy). Cho tới lúc đó, các mức F1 0,784/0,453 (S4) và 0,749/0,322 (v4) chỉ được trích dẫn là kết quả phát triển.*
+
 
 - **Hai luật nhiễu mới** trong `src/vspell/noise/rules.py`:
   - `tone_error`: đổi hoặc bỏ dấu thanh;

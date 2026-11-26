@@ -143,3 +143,22 @@ def test_s4_ablation_writes_into_new_directory(tmp_path):
                    {"dataset": "vsec_test", "variant": "a", "cor_f1": 0.4}], out)
     with open(out, encoding="utf-8") as f:
         assert [r["variant"] for r in csv.DictReader(f)] == ["a", "b"]
+
+
+def test_s4_tuning_tie_break_is_deterministic():
+    import importlib.util
+    import itertools
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location(
+        "tune_ngram_s4", Path(__file__).resolve().parents[1] / "scripts" / "tune_ngram_s4.py")
+    tu = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tu)
+    grid = [dict(zip(tu.GRID, v)) for v in itertools.product(*tu.GRID.values())]
+    a, b, c = grid[7], grid[3], grid[12]
+    rows = [{**a, "cor_f05": 0.80001}, {**b, "cor_f05": 0.80001}, {**c, "cor_f05": 0.800049}]
+    # c cao hơn trước khi làm tròn (0,8000 bằng nhau sau khi làm tròn 4 chữ số); a, b hòa -> theo thứ tự lưới
+    for perm in itertools.permutations(rows):
+        ranked = tu.select_best(list(perm), "cor_f05")
+        assert [r["cor_f05"] for r in ranked] == [0.800049, 0.80001, 0.80001]
+        assert ranked[1]["edit_margin"] == b["edit_margin"] and ranked[1] == {**b, "cor_f05": 0.80001}

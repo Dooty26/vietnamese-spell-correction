@@ -57,9 +57,25 @@ def _run(params: dict) -> dict:
     t0 = time.time()
     srcs = [r["src"] for r in _dev]
     m = evaluate(srcs, _corr.correct(srcs), [r["tgt"] for r in _dev])
-    return {**params, **{k: round(m[k], 4) for k in ("det_p", "det_r", "cor_p", "cor_r", "cor_f1", "over_correction")},
-            "cor_f05": round(f_beta(m["cor_p"], m["cor_r"], 0.5), 4), "n_edits": m["n_edits"],
+    # Giữ nguyên độ chính xác: chỉ làm tròn khi ghi bảng (select_best xếp hạng trên điểm chưa làm tròn).
+    return {**params, **{k: m[k] for k in ("det_p", "det_r", "cor_p", "cor_r", "cor_f1", "over_correction")},
+            "cor_f05": f_beta(m["cor_p"], m["cor_r"], 0.5), "n_edits": m["n_edits"],
             "seconds": round(time.time() - t0, 1)}
+
+
+def select_best(rows: list[dict], metric: str) -> list[dict]:
+    """Sắp các cấu hình: điểm `metric` chưa làm tròn giảm dần, hòa thì theo thứ tự cố định của lưới (GRID).
+
+    Kết quả về từ imap_unordered theo thứ tự hoàn thành; khóa phá hòa theo bộ tham số giúp mọi lần chạy
+    chọn cùng một cấu hình.
+    """
+    order = {tuple(vals): i for i, vals in enumerate(itertools.product(*GRID.values()))}
+    return sorted(rows, key=lambda r: (-r[metric], order[tuple(r[k] for k in GRID)]))
+
+
+def _rounded(row: dict) -> dict:
+    return {k: round(v, 4) if isinstance(v, float) and k not in GRID and k != "seconds" else v
+            for k, v in row.items()}
 
 
 def main() -> None:
@@ -81,13 +97,14 @@ def main() -> None:
             rows.append(row)
             log.info("[%d/%d] %s", len(rows), len(grid), row)
 
-    rows.sort(key=lambda r: -r[args.metric])
+    rows = select_best(rows, args.metric)
     table = Path(args.table)
     table.parent.mkdir(parents=True, exist_ok=True)
     with open(table, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0]))
         w.writeheader()
-        w.writerows(rows)
+        w.writerows(_rounded(r) for r in rows)
+    rows = [_rounded(r) for r in rows]
     base = next(r for r in rows if not r["ignore_iy"] and not r["keep_non_vietnamese"]
                 and r["capital_penalty"] == 0 and r["edit_margin"] == 0)
     best = rows[0]

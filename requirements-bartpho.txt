@@ -1,0 +1,10 @@
+# Bộ phiên bản cố định cho notebooks/04_bartpho.ipynb (PIN_VERSIONS = True).
+# Đây là các phiên bản đã chạy dự đoán/chấm cho C v3 và v4 trên máy của nhóm (xem requirements.txt).
+# Phiên bản dùng khi TRAIN v3/v4 trên Kaggle không được lưu lại; từ nay mỗi lần train ghi phiên bản thực tế
+# vào best/vspell_config.json (provenance.packages) và bartpho_pip_freeze.txt.
+# torch không ghim: dùng bản CUDA có sẵn của Kaggle/Colab (cài lại torch từ PyPI dễ lệch CUDA).
+transformers==5.24.1
+datasets==5.2.0
+accelerate==1.16.0
+sentencepiece==0.2.3
+PyYAML==6.0.3

@@ -20,6 +20,14 @@ import argparse
 from vspell.utils import get_logger, load_yaml, set_seed
 
 
+def positive_int(text: str) -> int:
+    """Kiểu cho --limit/--val-limit: số nguyên ≥ 1 (bỏ tham số = dùng toàn bộ)."""
+    v = int(text)
+    if v < 1:
+        raise argparse.ArgumentTypeError(f"phải ≥ 1, nhận {v} (bỏ tham số để dùng toàn bộ)")
+    return v
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/bartpho.yaml")
@@ -27,8 +35,8 @@ def main() -> None:
                     help="file JSONL train (ablation: syn_train_d05/d12/d25.jsonl)")
     ap.add_argument("--val", default="data/processed/syn_val.jsonl")
     ap.add_argument("--output-dir", default=None)
-    ap.add_argument("--limit", type=int, default=None, help="chỉ dùng N cặp train đầu (ablation 50000; chạy thử 200)")
-    ap.add_argument("--val-limit", type=int, default=None, help="chỉ dùng N cặp Syn-val đầu")
+    ap.add_argument("--limit", type=positive_int, default=None, help="chỉ dùng N cặp train đầu (ablation 50000; chạy thử 200)")
+    ap.add_argument("--val-limit", type=positive_int, default=None, help="chỉ dùng N cặp Syn-val đầu")
     ap.add_argument("--epochs", type=float, default=None)
     ap.add_argument("--max-steps", type=int, default=None, help="dừng sau N bước (chạy thử)")
     ap.add_argument("--batch-size", type=int, default=None)

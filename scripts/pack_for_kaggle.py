@@ -1,7 +1,7 @@
 """Đóng gói data/processed/*.jsonl để upload lên Kaggle dataset: nén gzip, cắt thành phần < 9 MB.
 
 Tập train chỉ giữ id/src/tgt; tập val/test giữ nguyên (cần `errors` cho bảng theo loại lỗi).
-Mỗi tập kèm manifest `{tên}.parts.json` (số phần, số dòng mỗi phần): scripts/unpack_parts.py (notebook
+Mỗi tập kèm manifest `{tên}.parts.json` (số phần, số dòng và SHA-256 của mỗi phần, SHA-256 của nội dung ghép): scripts/unpack_parts.py (notebook
 04_bartpho) dùng nó để phát hiện phần bị thiếu (kể cả phần cuối) trước khi ghép về data/processed/{tên}.jsonl.
 Phải upload cả file manifest cùng các phần.
 
@@ -9,6 +9,7 @@ Chạy: python scripts/pack_for_kaggle.py [--out data/kaggle_upload]
 """
 import argparse
 import gzip
+import hashlib
 import json
 import os
 import shutil
@@ -63,7 +64,11 @@ def write_parts(lines: list[str], name: str, out: Path, limit: int) -> list[int]
     try:
         for k, (data, _) in enumerate(parts):
             (tmp / f"{name}.part{k:02d}.jsonl.gz").write_bytes(data)
-        manifest = {"name": name, "n_parts": len(parts), "n_lines": len(lines), "lines": [n for _, n in parts]}
+        manifest = {"name": name, "n_parts": len(parts), "n_lines": len(lines), "lines": [n for _, n in parts],
+                    # SHA-256 của từng file .gz và của toàn bộ nội dung đã ghép: phát hiện phần bị thay bằng dữ liệu
+                    # của lần chạy khác dù cùng số dòng
+                    "sha256": [hashlib.sha256(d).hexdigest() for d, _ in parts],
+                    "content_sha256": hashlib.sha256("".join(lines).encode("utf-8")).hexdigest()}
         (tmp / f"{name}.parts.json").write_text(json.dumps(manifest), encoding="utf-8")
         for old in out.glob(f"{name}.part[0-9][0-9].jsonl.gz"):
             old.unlink()

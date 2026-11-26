@@ -91,6 +91,24 @@ def test_line_count_mismatch(tmp_path):
     src, parts = _pack(tmp_path)
     with gzip.open(parts[0], "rt", encoding="utf-8") as f:
         lines = f.readlines()
-    parts[0].write_bytes(gzip.compress("".join(lines[:-1]).encode()))  # phần đọc được nhưng thiếu dòng
+    data = gzip.compress("".join(lines[:-1]).encode())
+    parts[0].write_bytes(data)  # phần đọc được nhưng thiếu dòng
+    import hashlib
+    import json
+    mpath = src / "syn_train.parts.json"
+    m = json.loads(mpath.read_text(encoding="utf-8"))
+    m["sha256"][0] = hashlib.sha256(data).hexdigest()  # manifest khớp hash file, chỉ lệch số dòng
+    mpath.write_text(json.dumps(m), encoding="utf-8")
     with pytest.raises(ValueError, match="dòng, manifest ghi"):
         up.unpack(src, tmp_path / "processed")
+
+
+def test_swapped_part_with_same_line_count_is_rejected(tmp_path):
+    src = tmp_path / "upload"
+    src.mkdir()
+    pk.write_parts(["good\n"], "syn_val", src, limit=4000)
+    part = src / "syn_val.part00.jsonl.gz"
+    part.write_bytes(gzip.compress(b"WRONG\n"))  # cùng số dòng, khác nội dung; manifest giữ nguyên
+    with pytest.raises(ValueError, match="SHA-256"):
+        up.unpack(src, tmp_path / "processed")
+    assert not (tmp_path / "processed" / "syn_val.jsonl").exists()

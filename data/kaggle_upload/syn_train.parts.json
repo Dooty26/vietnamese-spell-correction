@@ -1,1 +1,1 @@
-{"name": "syn_train", "n_parts": 3, "n_lines": 150000, "lines": [56067, 56067, 37866]}
+{"name": "syn_train", "n_parts": 3, "n_lines": 150000, "lines": [56067, 56067, 37866], "sha256": ["a73ea0d94ae4f18a712bcbcfebc4c2587c7c431bf97ca98fe43f8d82c02b3b4f", "839e63b483dae96834db9ae031c0839d0ea39b4aa6628e4b6cb5f31a85b3e647", "32e06b69dda17b8365619efc60d82793377768e67d031bd8355319d34c1bda52"], "content_sha256": "a1302f1ea56abf3059d4142b58d7e7bcf81822f732b61e60472856caeb7502ab"}

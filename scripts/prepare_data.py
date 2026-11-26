@@ -26,7 +26,8 @@ from vspell.data.viwiki import download_viwiki, load_viwiki
 from vspell.data.vsec import download_vsec, load_vsec, split_dev_test
 from vspell.eval.align import error_positions
 from vspell.normalize import split_syllables
-from vspell.utils import get_logger, load_yaml, read_jsonl, set_seed, write_jsonl
+from vspell.utils import (get_logger, load_yaml, read_jsonl, resolve_hf_revision, run_provenance, set_seed,
+                          sha256_file, write_jsonl)
 
 
 def describe(records: list[dict]) -> dict:
@@ -70,6 +71,7 @@ def prepare_real_sets(cfg: dict, log) -> dict:
         "vsec_dev": describe(dev),
         "vsec_test": describe(test),
         "viwiki_test": {**describe(viwiki), **dict(sorted(viwiki_drop.items()))},
+        "sources_sha256": {p.name: sha256_file(p) for p in (vsec_path, viwiki_path)},
     }
     (out / "stats_real.json").write_text(json.dumps(stats, ensure_ascii=False, indent=2), encoding="utf-8")
     for name, st in stats.items():
@@ -95,7 +97,10 @@ def prepare_binhvq(cfg: dict, log, scale: float = 1.0) -> dict:
     paragraphs: list[tuple[str, list[str]]] = []
     c = Counter()
     pbar = tqdm(total=need, desc="Câu sạch Binhvq", unit="câu")
-    for pid, text in stream_paragraphs(bcfg["hf_id"], bcfg["max_row_groups"], cfg["seed"]):
+    # Cố định phiên bản Binhvq: revision trong config, hoặc commit hiện tại của nhánh main (ghi vào stats)
+    revision = resolve_hf_revision(bcfg["hf_id"], bcfg.get("revision"), repo_type="dataset") or bcfg.get("revision")
+    log.info("Binhvq %s@%s", bcfg["hf_id"], revision)
+    for pid, text in stream_paragraphs(bcfg["hf_id"], bcfg["max_row_groups"], cfg["seed"], revision=revision):
         c["paragraphs"] += 1
         kept = []
         for sent in split_sentences(clean_text(text)):
@@ -127,7 +132,9 @@ def prepare_binhvq(cfg: dict, log, scale: float = 1.0) -> dict:
              "syn_val": "clean_syn_val.txt", "syn_test": "clean_syn_test.txt"}
     for name, fname in files.items():
         (out / fname).write_text("\n".join(splits[name]) + "\n", encoding="utf-8")
-    stats = {**c, "split_sizes": {k: len(v) for k, v in splits.items()}, "scale": scale}
+    stats = {**c, "split_sizes": {k: len(v) for k, v in splits.items()}, "scale": scale,
+             "hf_id": bcfg["hf_id"], "revision": revision,
+             "provenance": run_provenance({fname: out / fname for fname in files.values()})}
     (out / "stats_binhvq.json").write_text(json.dumps(stats, ensure_ascii=False, indent=2), encoding="utf-8")
     log.info("Binhvq: %s", stats)
     return stats

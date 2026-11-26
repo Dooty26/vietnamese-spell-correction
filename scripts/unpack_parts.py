@@ -2,7 +2,9 @@
 
 Dùng trong notebooks/04_bartpho.ipynb. Mỗi tập được kiểm tra trước khi ghép:
 - chỉ số phần liên tiếp từ 00, không trùng (vd có part00 và part02 mà thiếu part01 -> lỗi);
-- khớp manifest `{tên}.parts.json` (số phần, số dòng mỗi phần), nên phát hiện cả khi thiếu phần cuối.
+- khớp manifest `{tên}.parts.json` (số phần, số dòng mỗi phần), nên phát hiện cả khi thiếu phần cuối;
+- SHA-256 của từng phần và của nội dung ghép khớp manifest, nên phát hiện phần bị thay bằng dữ liệu của lần
+  đóng gói khác (dù cùng số dòng).
 Ghép vào file tạm `{tên}.jsonl.tmp`, đọc đủ mới đổi tên thành file đích: lần ghép bị lỗi không để lại
 file đích dở dang, và mỗi lần chạy đều ghép lại (không bỏ qua file đã có).
 File `{tên}.jsonl` nguyên bản (không chia phần) được liên kết/chép thẳng sang.
@@ -12,6 +14,7 @@ Chạy: python scripts/unpack_parts.py --src /kaggle/input --dest data/processed
 """
 import argparse
 import gzip
+import hashlib
 import json
 import os
 import re
@@ -53,13 +56,23 @@ def check_parts(name: str, fs: list[tuple[int, Path]], manifest: dict | None) ->
         raise ValueError(f"{name}: thiếu phần {missing} (có {idx})")
     if manifest is not None and manifest["n_parts"] != len(idx):
         raise ValueError(f"{name}: manifest ghi {manifest['n_parts']} phần nhưng có {len(idx)} phần {idx}")
-    return [f for _, f in sorted(fs)]
+    files = [f for _, f in sorted(fs)]
+    if manifest is not None:
+        if "sha256" not in manifest or "content_sha256" not in manifest:
+            raise ValueError(f"{name}: manifest không có sha256 (bản đóng gói cũ): chạy lại pack_for_kaggle.py")
+        for f, want in zip(files, manifest["sha256"]):
+            got = hashlib.sha256(f.read_bytes()).hexdigest()
+            if got != want:
+                raise ValueError(f"{name}: {f.name} có SHA-256 {got[:12]}… khác manifest {want[:12]}… "
+                                 "(phần của lần đóng gói khác hoặc bị hỏng)")
+    return files
 
 
 def join_parts(name: str, files: list[Path], dst: Path, manifest: dict | None) -> int:
     """Ghép `files` vào dst qua file tạm; kiểm tra số dòng từng phần theo manifest. Trả về số dòng."""
     tmp = dst.with_name(dst.name + ".tmp")
     total = 0
+    digest = hashlib.sha256()
     try:
         with open(tmp, "w", encoding="utf-8", newline="") as out:
             for k, f in enumerate(files):
@@ -68,10 +81,13 @@ def join_parts(name: str, files: list[Path], dst: Path, manifest: dict | None) -
                 with opener(f, "rt", encoding="utf-8", newline="") as fin:
                     for line in fin:
                         out.write(line)
+                        digest.update(line.encode("utf-8"))
                         n += 1
                 if manifest is not None and manifest["lines"][k] != n:
                     raise ValueError(f"{name}: {f.name} có {n} dòng, manifest ghi {manifest['lines'][k]}")
                 total += n
+        if manifest is not None and digest.hexdigest() != manifest["content_sha256"]:
+            raise ValueError(f"{name}: nội dung ghép có SHA-256 khác manifest")
         os.replace(tmp, dst)
     finally:
         tmp.unlink(missing_ok=True)

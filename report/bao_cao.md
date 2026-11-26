@@ -343,7 +343,7 @@ Huấn luyện dùng `Seq2SeqTrainer` của Hugging Face Transformers trên GPU 
 - **Mô hình A, dữ liệu và đánh giá:** máy tính cá nhân chạy Windows 11, chỉ dùng CPU, Python 3.12. Các thư viện chính được ghim phiên bản trong `requirements.txt`: `pyarrow` 26.0.1, `huggingface_hub` 2.1.1, `numpy` 2.4.4, `pandas` 3.0.2, `PyYAML` 6.0.3, `scikit-learn` 1.9.1, `matplotlib` 3.10.8, `pytest` 9.1.1. Phần lõi của mô hình A (LM, sinh ứng viên, giải mã) chỉ dùng thư viện chuẩn của Python, không cần thư viện học máy.
 - **Mô hình C:** GPU trên Kaggle với `torch`, `transformers` (≥ 4.56; đã chạy 5.24.1), `datasets`, `accelerate`, `sentencepiece`. Notebook ghi danh sách phiên bản thực tế vào `bartpho_pip_freeze.txt` trong thư mục output của Kaggle. Dự đoán trên Viwiki và các phép chấm chạy lại trên CPU của máy cá nhân.
 - **Seed:** 42 cho lấy mẫu Binhvq, chia tập và chia VSEC; 42/43/44 cho sinh nhiễu Syn-train/Syn-val/Syn-test; 42 cho huấn luyện BARTpho. Hàm `set_seed` cố định seed của `random`, `numpy` và `torch`.
-- **Kiểm thử:** bộ test đơn vị trong `tests/` (chuẩn hóa, sinh lỗi, chỉ số đánh giá, LM n-gram, đọc dữ liệu thật, loại trùng, đóng gói, script đánh giá/phân tích) gồm 113 test và đều qua.
+- **Kiểm thử:** bộ test đơn vị trong `tests/` (chuẩn hóa, sinh lỗi, chỉ số đánh giá, LM n-gram, đọc dữ liệu thật, loại trùng, đóng gói, script đánh giá/phân tích) gồm 120 test và đều qua.
 - Toàn bộ quy trình được mô tả trong `README.md`; các thực nghiệm của mô hình A được chạy lại bằng `scripts/run_ngram_experiments.sh`.
 
 ## 4.2. Các tập đánh giá
@@ -615,10 +615,11 @@ Các ví dụ dưới đây so sánh A với C v3, chọn từ `outputs/tables/e
 
 **Hạn chế.**
 
-- Các cải tiến S4 và v4 được thiết kế sau khi phân tích lỗi trên tập kiểm tra (mục 5.5), nên kết quả của chúng trên VSEC-test và Viwiki-test có thể lạc quan hơn thực tế; nhóm chưa có tập lỗi thật thứ ba để kiểm chứng.
+- Các cải tiến S4 và v4 được thiết kế sau khi phân tích lỗi trên tập kiểm tra (mục 5.5), nên kết quả của chúng trên VSEC-test và Viwiki-test có thể lạc quan hơn thực tế; nhóm chưa có tập lỗi thật thứ ba để kiểm chứng. Thiết kế của hai biến thể này được **đóng băng**: luật và tham số S4 trong `outputs/checkpoints/ngram/o3_kneser_ney_s4/config.json`, bộ sinh nhiễu `configs/noise_v4.yaml` và checkpoint `outputs/checkpoints/bartpho_v4/best`. Không chỉnh thêm theo VSEC-test/Viwiki-test; muốn khẳng định hiệu quả cần chấm đúng các cấu hình này trên một tập lỗi thật chưa từng được dùng để phân tích hay thiết kế (nhóm chưa có tập như vậy). Cho tới lúc đó, các mức F1 0,784/0,453 (S4) và 0,749/0,322 (v4) chỉ được trích dẫn là kết quả phát triển.
 - Mô hình A chỉ sửa thay thế 1–1 với khoảng cách sửa ≤ 2, nên không xử lý được lỗi tách/ghép và lỗi sai nhiều ký tự (mục 2.6 và 3.2.7).
 - Kết luận về quy mô huấn luyện của C chưa tách được tác động của số cặp, số epoch và cách chọn checkpoint; C v4 mới được train với 50.000 cặp × 1 epoch.
 - Tham số giải mã chính của A chưa được chỉnh lại sau khi VSEC-dev được gom nhóm theo câu đích (mục 4.4).
+- Hồ sơ thực nghiệm của C chưa đầy đủ: phiên bản thư viện lúc train v3/v4 không được lưu, và metadata của checkpoint v3 là bản dựng lại (chỉ trọng số được tải về từ Kaggle). Từ nay mỗi lần train ghi commit repo, commit mô hình nền trên Hub, phiên bản thư viện và SHA-256 dữ liệu vào `vspell_config.json`.
 
 **Hướng phát triển.**
 
@@ -674,7 +675,7 @@ Theo yêu cầu của môn học, nhóm công khai việc sử dụng công cụ
 
 - Mọi số liệu trong báo cáo được lấy từ các tệp do mã nguồn sinh ra (`outputs/tables/*.csv`, `data/processed/stats_*.json`, `syn_*.stats.json`) hoặc từ tệp cấu hình; không có số liệu nào do AI tự đặt ra. Các chỗ chưa có số liệu được đánh dấu rõ ([cần bổ sung]).
 - Không tham số số nào được chọn trên các tập kiểm tra (VSEC-test, Viwiki-test); tham số giải mã của A và S4 được chọn trên VSEC-dev, checkpoint của C theo Syn-val. Tuy vậy, thiết kế của luật S4 (từ phân tích lỗi trên Viwiki-test) và tỉ lệ nhiễu của v4 (theo phân bố lỗi VSEC-test) đã chịu ảnh hưởng của tập kiểm tra, kể cả qua các phân tích có AI hỗ trợ; kết quả của A + S4 và C v4 được trình bày là kết quả phát triển, chưa phải kiểm chứng độc lập (mục 4.4 và 5.5).
-- Mã do AI viết đều kèm test đơn vị (113 test) và được nhóm chạy lại; nhóm chịu trách nhiệm toàn bộ về nội dung và kết quả của bài tập lớn.
+- Mã do AI viết đều kèm test đơn vị (120 test) và được nhóm chạy lại; nhóm chịu trách nhiệm toàn bộ về nội dung và kết quả của bài tập lớn.
 
 # Phụ lục B. Cấu hình chính
 
