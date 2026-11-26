@@ -61,8 +61,10 @@ def clean_text(text: str) -> str:
 
 
 def split_sentences(text: str) -> list[str]:
-    """Tách câu (dùng chung quy tắc với Viwiki)."""
-    return [text[s:e].strip() for s, e in sentence_spans(text)]
+    """Tách câu theo quy tắc cũ (`legacy=True`) để `prepare_data.py` tạo lại đúng corpus đã dùng train các
+    checkpoint. Quy tắc này cắt nhầm trước chữ thường có dấu (vd "v.v. ấy"); mảnh bắt đầu bằng chữ thường
+    bị `keep_sentence` loại, nên lỗi chỉ làm mất bớt câu chứ không tạo câu sai vào corpus."""
+    return [text[s:e].strip() for s, e in sentence_spans(text, legacy=True)]
 
 
 def keep_sentence(sentence: str, min_syllables: int = 5, max_syllables: int = 80,

@@ -56,7 +56,8 @@ def prepare_real_sets(cfg: dict, log) -> dict:
 
     vsec = load_vsec(vsec_path)
     dev, test = split_dev_test(vsec, cfg["vsec"]["dev_ratio"], cfg["seed"])
-    viwiki = load_viwiki(viwiki_path)
+    viwiki_drop: dict = {}
+    viwiki = load_viwiki(viwiki_path, stats=viwiki_drop)
 
     write_jsonl(dev, out / "vsec_dev.jsonl")
     write_jsonl(test, out / "vsec_test.jsonl")
@@ -66,7 +67,7 @@ def prepare_real_sets(cfg: dict, log) -> dict:
         "vsec_all": {**describe(vsec), "n_repaired_annotations": sum(r["n_repaired"] for r in vsec)},
         "vsec_dev": describe(dev),
         "vsec_test": describe(test),
-        "viwiki_test": describe(viwiki),
+        "viwiki_test": {**describe(viwiki), **dict(sorted(viwiki_drop.items()))},
     }
     (out / "stats_real.json").write_text(json.dumps(stats, ensure_ascii=False, indent=2), encoding="utf-8")
     for name, st in stats.items():

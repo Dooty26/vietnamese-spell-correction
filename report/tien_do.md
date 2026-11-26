@@ -8,7 +8,7 @@
 |---|---|---|
 | Chuẩn hóa | NFC, quy kiểu đặt dấu, tách âm tiết, kiểm tra âm tiết hợp lệ | `src/vspell/normalize.py` |
 | Đánh giá | Căn chỉnh âm tiết; Det/Cor P/R/F1, sent acc, sửa quá tay, recall theo loại lỗi | `src/vspell/eval/`, `scripts/evaluate.py` |
-| Dữ liệu thật | VSEC dev 1.868 / test 7.473 câu; Viwiki test 15.432 câu | `data/processed/vsec_*.jsonl`, `viwiki_test.jsonl` |
+| Dữ liệu thật | VSEC dev 1.868 / test 7.473 câu; Viwiki test 15.153 câu (tạo lại 26/11 sau khi sửa bộ tách câu) | `data/processed/vsec_*.jsonl`, `viwiki_test.jsonl` |
 | Binhvq | 571k câu sạch, đã loại trùng/rò rỉ: LM 400k, train 150k, val 5k, test 5k | `data/processed/lm_corpus.txt`, `clean_syn_*.txt` |
 | Sinh nhiễu | 6 loại lỗi, mật độ 5% âm tiết, 15% câu sạch | `src/vspell/noise/`, `syn_{train,val,test}.jsonl` |
 | **Mô hình A** | Tự cài n-gram LM + noisy channel + beam search; đã chỉnh tham số trên VSEC-dev | `src/vspell/models/ngram_*.py` |
@@ -22,10 +22,10 @@
 ## 2. Chưa xong (so với yêu cầu bài tập lớn)
 
 - [x] **Mô hình C (BARTpho)**: v3 xong 26/11 (Kaggle 2×T4, 5,6 giờ). VSEC cor_f1 0,536, over-correction 0,026; Syn-test cor_f1 0,959; Viwiki cor_f1 0,240.
-- [x] Ablation C (mật độ nhiễu 5/12/25%, 50k cặp × 1 epoch, Colab): VSEC cor_f1 0,571 / 0,622 / 0,624. Cả 3 đều cao hơn mô hình đầy đủ (mật độ 5%, 150k × 3 epoch, 0,536) → train lâu trên dữ liệu tổng hợp làm giảm khả năng chuyển sang lỗi thật (so với d05 cùng mật độ: recall 0,38 so với 0,42).
-- [x] **BARTpho v4** (nhiễu giàu lỗi dấu thanh/dấu phụ, 50k × 1 epoch, Colab 26/11): VSEC cor_f1 0,749 (d12: 0,622; A: 0,778), Viwiki 0,322 (vượt A 0,304), Syn 0,912. Xác nhận giả thuyết lệch phân bố loại lỗi (`report/phan_tich_A_vs_C.md` mục 4.2, ví dụ 24–32). Checkpoint v4 (fp16, ~800 MB) đã lưu về `outputs/checkpoints/bartpho_v4/best`, chạy CPU khớp 40/40 dự đoán Colab; demo mặc định dùng v4.
+- [x] Ablation C (mật độ nhiễu 5/12/25%, 50k cặp × 1 epoch, Colab): VSEC cor_f1 0,571 / 0,622 / 0,624. Cả 3 đều cao hơn mô hình đầy đủ (mật độ 5%, 150k × 3 epoch, 0,536) (so với d05 cùng mật độ: recall 0,38 so với 0,42). Hai cấu hình khác cả số cặp, số epoch và cách chọn checkpoint nên nguyên nhân mới là giả thuyết (khớp quá mức với nhiễu tổng hợp); muốn kết luận cần so checkpoint theo epoch trên cùng dữ liệu.
+- [x] **BARTpho v4** (nhiễu giàu lỗi dấu thanh/dấu phụ, 50k × 1 epoch, Colab 26/11): VSEC cor_f1 0,749 (d12: 0,622; A: 0,778), Viwiki 0,322 (vượt A 0,304), Syn 0,912. Xác nhận giả thuyết lệch phân bố loại lỗi (`report/phan_tich_A_vs_C.md` mục 4.2). Checkpoint v4 (fp16, ~800 MB) đã lưu về `outputs/checkpoints/bartpho_v4/best`, chạy CPU khớp 40/40 dự đoán Colab; demo mặc định dùng v4.
 - [x] Bảng so sánh A vs C (`main_results.csv`, `model_comparison.csv`, `ab_recall_by_kind.csv`)
-- [x] Ví dụ lỗi và hình A vs C (S5b: `report/phan_tich_A_vs_C.md`, ví dụ 15–23)
+- [x] Ví dụ lỗi và hình A vs C (S5b: `report/phan_tich_A_vs_C.md` mục 5)
 - [x] Demo Gradio với A và C (S6b)
 - [ ] Báo cáo PDF 20–30 trang (mới có dàn ý)
 - [x] README tái lập + clone sạch (26/11): clone mới vào `D:/Do/NLP/NLP_Nhom7`, pipeline thu nhỏ (`--scale 0.01`) chạy trọn; với dữ liệu/checkpoint từ Drive, mọi bảng tái tạo khớp repo, dự đoán ngram_s4 300/300 và bartpho_v4 30/30 khớp, demo nạp đủ A (S4) + C (v4). Checkpoint, dữ liệu đã xử lý và dự đoán nằm trên Google Drive (link trong README, chia sẻ công khai). Gói nộp: `D:/Do/NLP/NLP_Nhom7.zip`.
@@ -93,7 +93,7 @@ Ký hiệu: 🤖 Claude làm được trên máy này · 🧑 cần người ch�
 
 ### Đợt 3: phụ thuộc S2
 
-**S5b. Phân tích A vs C** ✅ *(26/11: report/phan_tich_A_vs_C.md; nguyên nhân chính: lệch phân bố loại lỗi, sai dấu thanh 6,6% trong train so với 49,6% trong VSEC; ví dụ 15–23 trong error_examples.md; bảng ab_recall_by_kind, model_comparison, ablation_noise_density)* 🤖 ⏱ ½ phiên
+**S5b. Phân tích A vs C** ✅ *(26/11: report/phan_tich_A_vs_C.md; nguyên nhân chính: lệch phân bố loại lỗi, sai dấu thanh 6,6% trong train so với 49,6% trong VSEC; bảng ab_recall_by_kind, model_comparison, ablation_noise_density)* 🤖 ⏱ ½ phiên
 - Chạy lại `analyze_errors.py` có thêm C.
 - Chọn 5–10 ví dụ cuối cùng: A đúng C sai, C đúng A sai, cả hai sai. Kèm phân tích từng ví dụ.
 

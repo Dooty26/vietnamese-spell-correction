@@ -55,3 +55,21 @@ def test_viwiki_sentence_split_and_apply_mistakes():
     assert dropped == 0
     assert [r["tgt"] for r in recs] == ["Minh Hoàng định bắt Canh.", "Năm này hạn hán.", "Dòng mới được một câu."]
     assert [r["n_errors"] for r in recs] == [1, 1, 1]
+
+
+def test_viwiki_split_unicode_lowercase_and_abbreviations():
+    assert len(sentence_spans("Anh ấy nói v.v. ấy là ví dụ.")) == 1  # "ấ" là chữ thường
+    assert len(sentence_spans("Họ đến. Ếch kêu.")) == 2              # "Ế" là chữ hoa
+    assert len(sentence_spans("Ông sống ở TP. Hồ Chí Minh. Bà ở Hà Nội.")) == 2
+    assert len(sentence_spans("John F. Kennedy là tổng thống. Ông mất năm 1963.")) == 2
+
+
+def test_viwiki_drops_sentences_with_unusable_labels():
+    text = "Đây là lổi\nchính của bài. Câu sau hoàn toàn đúng nhé."
+    text = text.replace("\n", "\n")
+    doc = {"_id": "2", "text": text, "mistakes": [
+        {"text": "lổi\nchính", "start_offset": str(text.index("lổi")), "suggest": ["lỗi chính"]}]}
+    stats = {}
+    recs, dropped = parse_viwiki_doc(doc, stats=stats)
+    assert dropped == 1 and stats["dropped_cross_sentence"] == 1 and stats["dropped_sentences"] == 2
+    assert [r["src"] for r in recs] == ["Câu sau hoàn toàn đúng nhé."]  # không còn câu lỗi mang nhãn "sạch"

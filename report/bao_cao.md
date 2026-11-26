@@ -67,7 +67,7 @@ Hệ thống sử dụng ba nguồn dữ liệu với vai trò khác nhau (Bản
 |---|---|---|---|---|
 | Binhvq news | `vietgpt/binhvq_news_vi` (Hugging Face) [10] | Tin tức | Từ điển, LM n-gram, nguồn sinh lỗi tổng hợp | LM-corpus 400k câu · Syn-train 150k · Syn-val 5k · Syn-test 5k (chia theo đoạn văn) |
 | VSEC [1] | GitHub `VSEC2021/VSEC` | Tin tức | Lỗi thật: chỉnh tham số và kiểm tra | VSEC-dev 20% (1.868 câu) · VSEC-test 80% (7.473 câu), seed 42 |
-| Viwiki-spelling [2] | GitHub `heraclex12/Viwiki-spelling` (CC BY 4.0) | Wikipedia | Lỗi thật: chỉ kiểm tra | Viwiki-test 15.432 câu |
+| Viwiki-spelling [2] | GitHub `heraclex12/Viwiki-spelling` (CC BY 4.0) | Wikipedia | Lỗi thật: chỉ kiểm tra | Viwiki-test 15.153 câu |
 
 ### 2.1.1. Binhvq news
 
@@ -98,7 +98,7 @@ VSEC được chia cố định thành VSEC-dev (20%) dùng để chỉnh tham s
 
 ### 2.1.3. Viwiki-spelling
 
-Viwiki-spelling [2] gồm 107 bài viết Wikipedia tiếng Việt, mỗi bài kèm danh sách lỗi đánh dấu theo vị trí ký tự trong toàn bài và danh sách gợi ý. Nhóm tách bài thành câu bằng cùng quy tắc tách câu đã dùng cho Binhvq, áp các sửa đổi nằm trọn trong câu để tạo câu đích, và **giữ cả những câu không có lỗi** để đo tỉ lệ sửa quá tay (`src/vspell/data/viwiki.py`). Các lỗi có vị trí không khớp chữ, chồng lấn nhau hoặc vắt qua ranh giới câu bị bỏ; câu ngắn hơn 3 token bị loại. Kết quả là 15.432 câu. Tập này chỉ dùng để kiểm tra, không dùng cho bất kỳ quyết định thiết kế hay chỉnh tham số nào.
+Viwiki-spelling [2] gồm 107 bài viết Wikipedia tiếng Việt, mỗi bài kèm danh sách lỗi đánh dấu theo vị trí ký tự trong toàn bài và danh sách gợi ý. Nhóm tách bài thành câu (chỉ cắt khi ký tự kế tiếp là chữ hoa theo Unicode hoặc số, và từ trước dấu chấm không phải chữ viết tắt như *TP.*, *GS.* hay chữ cái viết tắt tên), áp các sửa đổi nằm trọn trong câu để tạo câu đích, và **giữ cả những câu không có lỗi** để đo tỉ lệ sửa quá tay (`src/vspell/data/viwiki.py`). Các lỗi có vị trí không khớp chữ, chồng lấn nhau hoặc vắt qua ranh giới câu bị bỏ, và **câu chứa lỗi bị bỏ cũng bị loại** để không bị coi nhầm là câu sạch (1 lỗi vắt qua ranh giới câu, 2 câu bị loại; thống kê trong `stats_real.json`); câu ngắn hơn 3 token bị loại. Kết quả là 15.153 câu. Tham số của các mô hình không được chỉnh trên tập này, nhưng thiết kế của S4 có dựa trên phân tích lỗi trên nó (mục 5.5).
 
 ## 2.2. Làm sạch và chuẩn hóa
 
@@ -137,7 +137,7 @@ Bảng 2.3 tóm tắt các tập lỗi thật sau chuẩn hóa (`stats_real.json
 | VSEC (toàn bộ) | 9.341 | 8.770 | 10.857 | 3,51% | 33,11 | 32 | 70 |
 | VSEC-dev | 1.868 | 1.760 | 2.206 | 3,52% | 33,59 | 33 | 68 |
 | VSEC-test | 7.473 | 7.010 | 8.651 | 3,51% | 33,00 | 32 | 70 |
-| Viwiki-test | 15.432 | 1.283 | 1.541 | 0,29% | 34,20 | 31 | 244 |
+| Viwiki-test | 15.153 | 1.281 | 1.542 | 0,29% | 34,84 | 31 | 244 |
 
 Hai tập lỗi thật khác nhau rất rõ về phân bố. VSEC là tập “dày lỗi”: khoảng 94% số câu có ít nhất một lỗi, trung bình 1,16 lỗi mỗi câu và mật độ 3,5% token. Viwiki là tập “thưa lỗi”: chỉ khoảng 8,3% số câu có lỗi (tức khoảng 92% câu sạch) và mật độ lỗi chỉ 0,29% token, thấp hơn VSEC khoảng 12 lần. Vì vậy, trên Viwiki, chỉ cần mô hình sửa nhầm một tỉ lệ nhỏ trong số câu sạch là độ chính xác (precision) đã giảm mạnh. Hai cách chia VSEC-dev/VSEC-test có phân bố gần như trùng nhau, cho thấy việc chỉnh tham số trên VSEC-dev là đại diện. [chờ hình: `outputs/figures/` – phân bố độ dài câu và mật độ lỗi của ba tập, do task S5a tạo]
 
@@ -344,7 +344,7 @@ Mỗi mô hình được chấm trên ba tập kiểm tra, đại diện cho ba 
 |---|---:|---:|---|
 | Syn-test | 5.000 | 11.172 | Cùng phân phối với dữ liệu huấn luyện (lỗi tổng hợp, miền tin tức) |
 | VSEC-test | 7.473 | 8.651 | Lỗi thật, cùng miền tin tức |
-| Viwiki-test | 15.432 | 1.541 | Lỗi thật, khác miền (Wikipedia), lỗi rất thưa |
+| Viwiki-test | 15.153 | 1.542 | Lỗi thật, khác miền (Wikipedia), lỗi rất thưa |
 
 Thứ tự này cho phép trả lời CH2: khoảng cách giữa Syn-test và VSEC-test phản ánh sai khác giữa lỗi tổng hợp và lỗi thật; khoảng cách giữa VSEC-test và Viwiki-test phản ánh thêm sai khác về miền văn bản và mật độ lỗi.
 
@@ -401,8 +401,8 @@ Các chỉ số được tính ở mức vi mô (micro) trên toàn tập. Mọi
 | VSEC-test | Đồng nhất | 0 | 0 | 0 | 0 | 0 | 0 | 0,062 | 0 |
 | | A (n-gram) | 0,900 | 0,814 | 0,855 | 0,819 | 0,741 | **0,778** | 0,694 | 0,063 |
 | | C (BARTpho) | [chờ BARTpho] | | | | | | | |
-| Viwiki-test | Đồng nhất | 0 | 0 | 0 | 0 | 0 | 0 | 0,917 | 0 |
-| | A (n-gram) | 0,258 | 0,570 | 0,355 | 0,221 | 0,487 | **0,304** | 0,835 | 0,128 |
+| Viwiki-test | Đồng nhất | 0 | 0 | 0 | 0 | 0 | 0 | 0,916 | 0 |
+| | A (n-gram) | 0,259 | 0,569 | 0,356 | 0,221 | 0,487 | **0,304** | 0,834 | 0,128 |
 | | C (BARTpho) | [chờ BARTpho] | | | | | | | |
 
 Mô hình đồng nhất cho đúng các giá trị kỳ vọng (P/R/F1 và OC bằng 0; SA bằng tỉ lệ câu sạch: 741/5.000 ≈ 0,148 trên Syn-test), xác nhận bộ chấm hoạt động đúng.
@@ -411,7 +411,7 @@ Mô hình đồng nhất cho đúng các giá trị kỳ vọng (P/R/F1 và OC b
 
 - **Trên Syn-test**, mô hình A đạt Correction F1 0,898 với precision và recall cân bằng (0,891/0,905). Kết quả cao là điều dễ hiểu vì các nguồn ứng viên `telex`, `confusion`, `teencode` được xây dựng từ cùng tri thức với bộ sinh lỗi (mục 3.2.4).
 - **Trên VSEC-test** (lỗi thật, cùng miền), Correction F1 giảm còn 0,778. Precision phát hiện vẫn cao (0,900), sự sụt giảm chủ yếu đến từ recall (0,814 so với 0,943 trên Syn-test): một phần lỗi thật nằm ngoài các mẫu lỗi mà bộ sinh ứng viên biết, hoặc là lỗi tách/ghép âm tiết mà mô hình 1–1 không xử lý được. Tỉ lệ sửa quá tay trên câu sạch của VSEC thấp (6,3%).
-- **Trên Viwiki-test** (khác miền, lỗi thưa), kết quả giảm mạnh: Correction F1 chỉ 0,304, do precision rất thấp (0,221). Mô hình thực hiện 3.404 thay đổi trong khi tập chỉ có 1.541 lỗi, và 12,8% câu sạch bị sửa. Với mật độ lỗi 0,29%, mỗi lần sửa nhầm “đắt” hơn nhiều so với trên VSEC. Mặt khác, văn bản Wikipedia chứa nhiều tên riêng, thuật ngữ và từ nước ngoài không có trong LM-corpus tin tức, nên LM đánh giá thấp các âm tiết này và mô hình có xu hướng “sửa” chúng. Độ chính xác câu của mô hình A trên Viwiki (0,835) thậm chí **thấp hơn** mô hình đồng nhất (0,917): trên tập thưa lỗi này, áp dụng mô hình A làm hại nhiều câu hơn số câu được sửa đúng.
+- **Trên Viwiki-test** (khác miền, lỗi thưa), kết quả giảm mạnh: Correction F1 chỉ 0,304, do precision rất thấp (0,221). Mô hình thực hiện 3.393 thay đổi trong khi tập chỉ có 1.542 lỗi, và 12,8% câu sạch bị sửa. Với mật độ lỗi 0,29%, mỗi lần sửa nhầm “đắt” hơn nhiều so với trên VSEC. Mặt khác, văn bản Wikipedia chứa nhiều tên riêng, thuật ngữ và từ nước ngoài không có trong LM-corpus tin tức, nên LM đánh giá thấp các âm tiết này và mô hình có xu hướng “sửa” chúng. Độ chính xác câu của mô hình A trên Viwiki (0,834) thậm chí **thấp hơn** mô hình đồng nhất (0,916): trên tập thưa lỗi này, áp dụng mô hình A làm hại nhiều câu hơn số câu được sửa đúng.
 
 Về **CH2**, kết quả của mô hình A cho thấy khả năng tổng quát hóa phụ thuộc mạnh vào cả loại lỗi lẫn miền: chuyển từ lỗi tổng hợp sang lỗi thật cùng miền làm Correction F1 giảm khoảng 0,12, còn chuyển sang miền khác với lỗi thưa làm giảm thêm khoảng 0,47. So sánh với mô hình C: [chờ BARTpho].
 
@@ -475,7 +475,7 @@ Xu hướng rõ ràng: hình phạt `real_word_penalty` càng âm thì mô hình
 
 ## 5.5. Giảm sửa quá tay của mô hình A (S4)
 
-Phân tích lỗi của mô hình A trên Viwiki (`outputs/tables/overcorrection_viwiki.csv`) cho thấy các lần sửa quá tay rơi vào ba nhóm: từ thông thường bị thay bằng một âm tiết “phổ biến hơn” (khoảng 45%), từ ngoài từ điển như từ nước ngoài (*manga → mang*, khoảng 35%) và tên riêng viết hoa (khoảng 21%). Ngoài ra còn một nhóm nhỏ là đổi biến thể chính tả i/y (*lí → lý*, *kì → kỳ*, *Mĩ → Mỹ*) vốn không phải lỗi. Nhóm bổ sung bốn luật vào bước sinh lựa chọn của bộ giải mã (`NgramCorrector._options`), mỗi luật là một tham số trong `configs/ngram.yaml` và mặc định tắt để tái lập đúng mô hình A ban đầu:
+Phân tích lỗi của mô hình A trên Viwiki (`outputs/tables/overcorrection_viwiki.csv`) cho thấy các lần sửa quá tay rơi vào ba nhóm: từ thông thường bị thay bằng một âm tiết “phổ biến hơn” (khoảng 45%), từ ngoài từ điển như từ nước ngoài (*manga → mang*, khoảng 34%) và tên riêng viết hoa (khoảng 21%). Ngoài ra còn một nhóm nhỏ là đổi biến thể chính tả i/y (*lí → lý*, *kì → kỳ*, *Mĩ → Mỹ*) vốn không phải lỗi. Nhóm bổ sung bốn luật vào bước sinh lựa chọn của bộ giải mã (`NgramCorrector._options`), mỗi luật là một tham số trong `configs/ngram.yaml` và mặc định tắt để tái lập đúng mô hình A ban đầu:
 
 - `ignore_iy`: bỏ các ứng viên chỉ khác âm tiết gốc ở biến thể i/y (vần chỉ gồm một nguyên âm i/y, không âm cuối, cùng phụ âm đầu và thanh).
 - `keep_non_vietnamese`: với âm tiết **không có dấu**, ngoài từ điển và sai cấu trúc âm tiết tiếng Việt (*manga*, *online*), chỉ giữ ứng viên từ các nguồn mạnh (`telex`, `skeleton`, `teencode`). Âm tiết có dấu nhưng sai cấu trúc (*vànv*) vẫn được coi là lỗi gõ và sửa bình thường.
@@ -494,26 +494,26 @@ Cấu hình được chọn trên VSEC-dev theo Correction F0.5 (mục 4.4) là:
 | | A + S4 | 0,935 | 0,797 | 0,860 | 0,615 | 0,058 | 9.523 |
 | VSEC-test | A | 0,819 | 0,741 | 0,778 | 0,694 | 0,063 | 7.825 |
 | | A + S4 | 0,897 | 0,697 | **0,784** | 0,688 | 0,022 | 6.724 |
-| Viwiki-test | A | 0,221 | 0,487 | 0,304 | 0,835 | 0,128 | 3.404 |
-| | A + S4 | 0,461 | 0,445 | **0,453** | 0,915 | 0,041 | 1.486 |
+| Viwiki-test | A | 0,221 | 0,487 | 0,304 | 0,834 | 0,128 | 3.393 |
+| | A + S4 | 0,462 | 0,444 | **0,453** | 0,913 | 0,041 | 1.482 |
 
 **Bảng 5.6.** Ablation từng luật: mô hình A ban đầu bật đúng một luật (`outputs/tables/ngram_s4_ablation.csv`).
 
 | Biến thể | VSEC Cor P | VSEC Cor F1 | Viwiki Cor P | Viwiki Cor R | Viwiki Cor F1 | Viwiki OC |
 |---|---:|---:|---:|---:|---:|---:|
 | A | 0,819 | 0,778 | 0,221 | 0,487 | 0,304 | 0,128 |
-| A + `ignore_iy` | 0,825 | 0,781 | 0,221 | 0,481 | 0,303 | 0,125 |
-| A + `keep_non_vietnamese` | 0,850 | 0,786 | 0,275 | 0,487 | 0,352 | 0,100 |
-| A + `capital_penalty` | 0,825 | 0,780 | 0,260 | 0,487 | 0,339 | 0,104 |
-| A + `edit_margin` | 0,862 | 0,779 | 0,303 | 0,451 | 0,363 | 0,078 |
-| A + cả bốn (A + S4) | 0,897 | 0,784 | 0,461 | 0,445 | **0,453** | 0,041 |
+| A + `ignore_iy` | 0,825 | 0,781 | 0,222 | 0,481 | 0,304 | 0,126 |
+| A + `keep_non_vietnamese` | 0,850 | 0,786 | 0,275 | 0,487 | 0,352 | 0,102 |
+| A + `capital_penalty` | 0,825 | 0,780 | 0,262 | 0,486 | 0,341 | 0,104 |
+| A + `edit_margin` | 0,862 | 0,779 | 0,305 | 0,451 | 0,364 | 0,079 |
+| A + cả bốn (A + S4) | 0,897 | 0,784 | 0,462 | 0,444 | **0,453** | 0,041 |
 
 Một số nhận xét:
 
-- **Trên Viwiki**, Correction F1 tăng từ 0,304 lên 0,453 (+0,149), chủ yếu nhờ precision tăng gấp đôi (0,221 lên 0,461) trong khi recall chỉ giảm 0,04. Số lần sửa giảm từ 3.404 xuống 1.486, xấp xỉ số lỗi thật (1.541), và tỉ lệ câu sạch bị sửa giảm từ 12,8% xuống 4,1%. Độ chính xác câu (0,915) gần bằng mô hình đồng nhất (0,917): mô hình gần như không còn làm hại câu đúng, nhưng vẫn chưa vượt được mốc “không sửa gì”.
+- **Trên Viwiki**, Correction F1 tăng từ 0,304 lên 0,453 (+0,149), chủ yếu nhờ precision tăng gấp đôi (0,221 lên 0,462) trong khi recall chỉ giảm 0,04. Số lần sửa giảm từ 3.393 xuống 1.482, xấp xỉ số lỗi thật (1.542), và tỉ lệ câu sạch bị sửa giảm từ 12,8% xuống 4,1%. Độ chính xác câu (0,913) gần bằng mô hình đồng nhất (0,916): mô hình gần như không còn làm hại câu đúng, nhưng vẫn chưa vượt được mốc “không sửa gì”.
 - **Trên VSEC-test**, F1 tăng nhẹ (0,778 lên 0,784): precision tăng bù cho recall giảm. Đây là tập có cùng miền với tập dùng để chỉnh, nên mức tăng nhỏ là hợp lý.
 - **Trên Syn-test**, F1 giảm từ 0,898 xuống 0,860, do recall giảm (0,905 xuống 0,797). Ngưỡng tin cậy chặn cả những lần sửa đúng mà LM chỉ hơi tin, và luật `keep_non_vietnamese` chặn các lỗi trượt phím trên âm tiết không dấu. Trên dữ liệu tổng hợp, mật độ lỗi cao và mọi lỗi đều thuộc các mẫu mà bộ sinh ứng viên biết, nên sự thận trọng này bị “phạt”. Kết quả này nhắc lại rằng tối ưu cho dữ liệu tổng hợp không đồng nghĩa với tối ưu cho văn bản thật.
-- **Các luật bổ trợ nhau.** Bật riêng từng luật chỉ đưa F1 trên Viwiki lên tối đa 0,363, còn bật cả bốn lên 0,453, lớn hơn tổng các mức tăng riêng lẻ. Mỗi luật loại một nhóm sửa nhầm khác nhau; khi các nhóm này bị loại cùng lúc, những lần sửa còn lại tập trung vào lỗi thật. Riêng `ignore_iy` gần như không đổi F1 vì nhóm i/y chỉ chiếm khoảng 2% số lần sửa quá tay trên Viwiki.
+- **Các luật bổ trợ nhau.** Bật riêng từng luật chỉ đưa F1 trên Viwiki lên tối đa 0,364, còn bật cả bốn lên 0,453, lớn hơn tổng các mức tăng riêng lẻ. Mỗi luật loại một nhóm sửa nhầm khác nhau; khi các nhóm này bị loại cùng lúc, những lần sửa còn lại tập trung vào lỗi thật. Riêng `ignore_iy` gần như không đổi F1 vì nhóm i/y chỉ chiếm khoảng 2% số lần sửa quá tay trên Viwiki.
 - So với mô hình C (BARTpho v4, Viwiki Cor F1 0,322), mô hình A + S4 cao hơn khoảng 0,13 trên Viwiki và cao hơn 0,035 trên VSEC-test (0,784 so với 0,749).
 
 ## 5.6. Phân tích lỗi

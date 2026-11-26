@@ -11,12 +11,12 @@ vsec_test,Sai 1 chữ cái (thêm/bớt/thay/đảo),2212,0.2557
 vsec_test,Sai dấu phụ (ă â ê ô ơ ư đ),1038,0.12
 vsec_test,Sai ≥2 ký tự,392,0.0453
 vsec_test,Tách/ghép âm tiết,715,0.0827
-viwiki_test,Chỉ sai dấu thanh,525,0.3407
+viwiki_test,Chỉ sai dấu thanh,525,0.3405
 viwiki_test,Chỉ sai hoa/thường,5,0.0032
-viwiki_test,Sai 1 chữ cái (thêm/bớt/thay/đảo),534,0.3465
-viwiki_test,Sai dấu phụ (ă â ê ô ơ ư đ),242,0.157
+viwiki_test,Sai 1 chữ cái (thêm/bớt/thay/đảo),535,0.347
+viwiki_test,Sai dấu phụ (ă â ê ô ơ ư đ),242,0.1569
 viwiki_test,Sai ≥2 ký tự,115,0.0746
-viwiki_test,Tách/ghép âm tiết,120,0.0779
+viwiki_test,Tách/ghép âm tiết,120,0.0778
 syn_train,Chỉ sai dấu thanh,2941,0.0659
 syn_train,Chỉ sai hoa/thường,0,0.0
 syn_train,Sai 1 chữ cái (thêm/bớt/thay/đảo),37404,0.8377
