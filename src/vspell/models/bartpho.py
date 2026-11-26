@@ -114,8 +114,12 @@ def _filter_kwargs(cls, kwargs: dict) -> dict:
     return {k: v for k, v in kwargs.items() if k in params}
 
 
-def _make_compute_metrics(tokenizer, val_srcs: list[str]):
-    """compute_metrics cho metric_for_best_model = cor_f1 (cần predict_with_generate)."""
+def _make_compute_metrics(tokenizer, val_srcs: list[str], val_tgts: list[str]):
+    """compute_metrics cho metric_for_best_model = cor_f1 (cần predict_with_generate).
+
+    Chấm với câu đích gốc `val_tgts`, không giải mã lại `labels`: nhãn đã bị tokenizer cắt ở
+    max_target_length, nên nếu so với nhãn cắt thì một dự đoán mất đuôi câu vẫn được tính là đúng hoàn toàn.
+    """
     import numpy as np
 
     from vspell.eval.metrics import evaluate
@@ -125,10 +129,9 @@ def _make_compute_metrics(tokenizer, val_srcs: list[str]):
         if isinstance(preds, tuple):
             preds = preds[0]
         preds = np.where(preds < 0, tokenizer.pad_token_id, preds)
-        labels = np.where(labels < 0, tokenizer.pad_token_id, labels)
-        hyp = [normalize(s) for s in tokenizer.batch_decode(preds, skip_special_tokens=True)]
-        ref = [normalize(s) for s in tokenizer.batch_decode(labels, skip_special_tokens=True)]
-        m = evaluate(val_srcs[:len(hyp)], hyp, ref)
+        srcs = val_srcs[:len(preds)]
+        hyp = [postprocess(src, text) for src, text in zip(srcs, tokenizer.batch_decode(preds, skip_special_tokens=True))]
+        m = evaluate(srcs, hyp, val_tgts[:len(hyp)])
         return {k: m[k] for k in ("cor_f1", "det_f1", "sent_acc")}
 
     return compute
@@ -204,8 +207,9 @@ def train(config: dict, train_path: str, val_path: str) -> str:
         processing_class=tokenizer,
     )
     if gen_eval:
-        val_srcs = [p["src"] for p in load_pairs(val_path, val_ds.num_rows)]
-        trainer_kwargs["compute_metrics"] = _make_compute_metrics(tokenizer, val_srcs)
+        val_pairs = load_pairs(val_path, val_ds.num_rows)  # cùng thứ tự với val_ds (eval không xáo trộn)
+        trainer_kwargs["compute_metrics"] = _make_compute_metrics(tokenizer, [p["src"] for p in val_pairs],
+                                                                  [p["tgt"] for p in val_pairs])
     trainer = Seq2SeqTrainer(**_filter_kwargs(Seq2SeqTrainer, trainer_kwargs))
 
     resume = config.get("resume_from_checkpoint")

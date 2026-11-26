@@ -96,8 +96,10 @@ def main() -> None:
 
     src, out = Path(args.checkpoint), Path(args.output)
     out.mkdir(parents=True, exist_ok=True)
-    for name in ("lm.pkl", "lexicon.json"):
-        if not (out / name).exists():
+    # Luôn chép lại LM + từ điển từ checkpoint nguồn: tham số vừa chọn chỉ đúng với LM đã dùng để chọn
+    # (giữ file cũ khi đã có sẽ trộn LM của lần train trước với cấu hình của lần này).
+    if src.resolve() != out.resolve():
+        for name in ("lm.pkl", "lexicon.json"):
             shutil.copy2(src / name, out / name)
     cfg = json.loads((src / "config.json").read_text(encoding="utf-8"))
     cfg["decoding"].update({k: best[k] for k in GRID})

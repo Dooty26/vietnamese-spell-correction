@@ -22,7 +22,7 @@
 ## 2. Chưa xong (so với yêu cầu bài tập lớn)
 
 - [x] **Mô hình C (BARTpho)**: v3 xong 26/11 (Kaggle 2×T4, 5,6 giờ). VSEC cor_f1 0,536, over-correction 0,026; Syn-test cor_f1 0,959; Viwiki cor_f1 0,240.
-- [x] Ablation C (mật độ nhiễu 5/12/25%, 50k cặp × 1 epoch, Colab): VSEC cor_f1 0,572 / 0,622 / 0,624. Cả 3 đều cao hơn mô hình đầy đủ (150k × 3 epoch, 0,536) → train lâu trên dữ liệu tổng hợp làm giảm khả năng chuyển sang lỗi thật (recall 0,38 so với 0,48).
+- [x] Ablation C (mật độ nhiễu 5/12/25%, 50k cặp × 1 epoch, Colab): VSEC cor_f1 0,571 / 0,622 / 0,624. Cả 3 đều cao hơn mô hình đầy đủ (mật độ 5%, 150k × 3 epoch, 0,536) → train lâu trên dữ liệu tổng hợp làm giảm khả năng chuyển sang lỗi thật (so với d05 cùng mật độ: recall 0,38 so với 0,42).
 - [x] **BARTpho v4** (nhiễu giàu lỗi dấu thanh/dấu phụ, 50k × 1 epoch, Colab 26/11): VSEC cor_f1 0,749 (d12: 0,622; A: 0,778), Viwiki 0,322 (vượt A 0,304), Syn 0,912. Xác nhận giả thuyết lệch phân bố loại lỗi (`report/phan_tich_A_vs_C.md` mục 4.2, ví dụ 24–32). Checkpoint v4 (fp16, ~800 MB) đã lưu về `outputs/checkpoints/bartpho_v4/best`, chạy CPU khớp 40/40 dự đoán Colab; demo mặc định dùng v4.
 - [x] Bảng so sánh A vs C (`main_results.csv`, `model_comparison.csv`, `ab_recall_by_kind.csv`)
 - [x] Ví dụ lỗi và hình A vs C (S5b: `report/phan_tich_A_vs_C.md`, ví dụ 15–23)

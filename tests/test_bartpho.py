@@ -125,3 +125,20 @@ def test_correct_long_sentence_not_truncated(tiny_model):
     from vspell.normalize import normalize, split_syllables
     # tokenizer tí hon giải mã có dấu cách trước dấu câu -> so theo âm tiết
     assert [split_syllables(o) for o in out] == [split_syllables(normalize(x)) for x in (long, short)]
+
+
+def test_compute_metrics_uses_full_targets(tiny_model):
+    """Nhãn bị cắt ở max_target_length + dự đoán mất đuôi câu không được chấm là đúng hoàn toàn."""
+    import numpy as np
+    from transformers import AutoTokenizer
+
+    from vspell.models.bartpho import _make_compute_metrics
+
+    tok = AutoTokenizer.from_pretrained(tiny_model)
+    full = "Giá vàg hôm nay tăng mạnh."
+    cut = tok([full], max_length=4, truncation=True)["input_ids"]  # "<s> Giá vàg </s>"
+    preds = labels = np.array(cut)
+    m = _make_compute_metrics(tok, [full], [full])((preds, labels))
+    assert m["sent_acc"] == 0.0
+    whole = np.array(tok([full])["input_ids"])
+    assert _make_compute_metrics(tok, [full], [full])((whole, whole))["sent_acc"] == 1.0

@@ -36,3 +36,27 @@ def test_real_error_kind():
     assert ae.real_error_kind("chặn", "chận") == "Sai dấu phụ (ă â ê ô ơ ư đ)"
     assert ae.real_error_kind("bảo", "báo") == "Chỉ sai dấu thanh"
     assert ae.real_error_kind("c", "") == "Tách/ghép âm tiết"
+
+
+def _per_sent(rows):
+    recs = [dict(id=i, src=s, pred=p, tgt=t) for i, s, p, t in rows]
+    return recs, [ae.classify_sentence(r["src"], r["pred"], r["tgt"], LEX) for r in recs]
+
+
+def test_comparison_pairs_by_id_not_order():
+    import pytest
+
+    a = [(1, "đều chỉnh", "điều chỉnh", "điều chỉnh"), (2, "trời đẹp", "trời đẹp", "trời đẹp")]
+    b = [(1, "đều chỉnh", "đều chỉnh", "điều chỉnh"), (2, "trời đẹp", "trời đẹp", "trời đẹp")]
+    ps = {("A", "vsec_test"): _per_sent(a), ("B", "vsec_test"): _per_sent(b)}
+    ps_rev = {("A", "vsec_test"): _per_sent(a), ("B", "vsec_test"): _per_sent(b[::-1])}
+
+    def groups(p):
+        return {r["group"]: r["n"] for r in ae.comparison_rows(p, ["A", "B"]) if r["n"]}
+
+    assert groups(ps) == groups(ps_rev) == {"A_dung_B_sai": 1}
+    with pytest.raises(ValueError, match="không cùng tập câu"):  # file B chạy với --limit
+        ae.comparison_rows({("A", "vsec_test"): _per_sent(a), ("B", "vsec_test"): _per_sent(b[:1])}, ["A", "B"])
+    bad = [(1, "đều chỉnh", "đều chỉnh", "đều chỉnh"), b[1]]
+    with pytest.raises(ValueError, match="khác nhau"):
+        ae.comparison_rows({("A", "vsec_test"): _per_sent(a), ("B", "vsec_test"): _per_sent(bad)}, ["A", "B"])

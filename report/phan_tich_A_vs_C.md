@@ -25,7 +25,7 @@
   | Cả hai sửa đúng | 2.881 |
   | Chỉ A đúng | 3.531 |
   | Chỉ C đúng | 442 |
-  | Cả hai sai | 1.797 |
+  | Cả hai sai | 1.796 |
 
   Gần như mọi lỗi C sửa được thì A cũng sửa được. Ngược lại thì không.
 
@@ -42,8 +42,8 @@ Phân bố kiểu lỗi được suy từ cặp (âm tiết sai, âm tiết đú
 | Chỉ sai dấu thanh | 6,6% | **49,6%** | **34,1%** |
 | Sai dấu phụ (ă â ê ô ơ ư đ) | 0,4% | 12,0% | 15,7% |
 | Sai 1 chữ cái | **83,8%** | 25,6% | 34,7% |
-| Sai ≥2 ký tự | 9,3% | 4,4% | 7,5% |
-| Tách/ghép âm tiết | 0,0% | 8,4% | 7,8% |
+| Sai ≥2 ký tự | 9,3% | 4,5% | 7,5% |
+| Tách/ghép âm tiết | 0,0% | 8,3% | 7,8% |
 
 Bộ sinh nhiễu (tỉ lệ loại lỗi theo arXiv 2405.02573) chủ yếu tạo lỗi thay hoặc thêm một chữ cái. Lỗi thật thì một nửa là sai dấu thanh. Recall sửa lỗi theo kiểu lỗi trên VSEC (`ab_recall_by_kind.csv`):
 
@@ -51,9 +51,9 @@ Bộ sinh nhiễu (tỉ lệ loại lỗi theo arXiv 2405.02573) chủ yếu t�
 |---|---|---|---|---|
 | Chỉ sai dấu thanh | 4.288 | **0,876** | 0,330 | 0,718 |
 | Sai dấu phụ | 1.038 | **0,897** | 0,491 | 0,764 |
-| Sai 1 chữ cái | 2.203 | **0,745** | 0,542 | 0,596 |
-| Sai ≥2 ký tự | 363 | 0,234 | 0,444 | **0,565** |
-| Tách/ghép âm tiết | 418 | 0,002 | 0,089 | **0,258** |
+| Sai 1 chữ cái | 2.204 | **0,745** | 0,542 | 0,596 |
+| Sai ≥2 ký tự | 372 | 0,229 | 0,433 | **0,551** |
+| Tách/ghép âm tiết | 407 | 0,000 | 0,091 | **0,268** |
 
 **Nhận xét:**
 
@@ -67,7 +67,7 @@ Ta gọi một lỗi là **"tạo ra từ có thật"** khi âm tiết sai vẫn
 
 | | VSEC: không có thật | VSEC: có thật | Viwiki: không có thật | Viwiki: có thật |
 |---|---|---|---|---|
-| n | 1.677 | **6.638** | 357 | **1.159** |
+| n | 1.677 | **6.637** | 357 | **1.159** |
 | A | 0,751 | **0,776** | **0,389** | **0,528** |
 | C v3 | 0,678 | 0,329 | 0,331 | 0,249 |
 | C v4 | **0,819** | 0,621 | 0,378 | 0,368 |
@@ -86,7 +86,7 @@ Kết quả trên VSEC-test (`ablation_noise_density.csv`, hình `ablation_noise
 
 | Cấu hình | P | R | F1 | Sửa quá tay |
 |---|---|---|---|---|
-| 5% nhiễu · 50k cặp · 1 epoch | 0,884 | 0,422 | 0,572 | 0,024 |
+| 5% nhiễu · 50k cặp · 1 epoch | 0,884 | 0,422 | 0,571 | 0,024 |
 | 12% · 50k · 1 epoch | 0,882 | **0,480** | 0,622 | 0,028 |
 | 25% · 50k · 1 epoch | 0,895 | 0,479 | **0,624** | 0,045 |
 | 5% · 150k · 3 epoch (mô hình chính, v3) | 0,888 | 0,384 | 0,536 | 0,026 |
@@ -94,7 +94,7 @@ Kết quả trên VSEC-test (`ablation_noise_density.csv`, hình `ablation_noise
 *Mô hình chính train trên `syn_train.jsonl`, sinh bằng `configs/noise.yaml` với mật độ 5% (`syn_train.stats.json`: `syllable_error_rate` 0,05), không phải 12%. Vì vậy mốc so sánh đúng cho quy mô huấn luyện là dòng 5% · 50k, không phải dòng 12%.*
 
 - **Mật độ nhiễu:** tăng từ 5% lên 12% làm recall tăng 6 điểm, còn precision gần như không đổi. Lên 25% thì F1 không tăng thêm, trong khi tỉ lệ sửa quá tay gần gấp đôi. Mức 12% là điểm cân bằng hợp lý.
-- **Quy mô huấn luyện** (cùng mật độ 5%): mô hình chính được train nhiều hơn khoảng 9 lần (150k cặp × 3 epoch). Nó tốt hơn trên Syn-test nhưng **kém hơn** trên VSEC (F1 0,536 so với 0,572; recall 0,384 so với 0,422). Train càng lâu trên dữ liệu tổng hợp, mô hình càng khớp với phân bố nhiễu tự sinh và càng ít dám sửa những lỗi không giống dữ liệu train. Vì vậy, chọn checkpoint theo Syn-val không phải là tiêu chí tốt khi mục tiêu là lỗi thật.
+- **Quy mô huấn luyện** (cùng mật độ 5%): mô hình chính được train nhiều hơn khoảng 9 lần (150k cặp × 3 epoch). Nó tốt hơn trên Syn-test nhưng **kém hơn** trên VSEC (F1 0,536 so với 0,571; recall 0,384 so với 0,422). Train càng lâu trên dữ liệu tổng hợp, mô hình càng khớp với phân bố nhiễu tự sinh và càng ít dám sửa những lỗi không giống dữ liệu train. Vì vậy, chọn checkpoint theo Syn-val không phải là tiêu chí tốt khi mục tiêu là lỗi thật.
 
 ### 4.2. Loại lỗi sinh nhiễu (v4)
 
@@ -131,7 +131,7 @@ Mục 2 cho thấy nguyên nhân chính khiến C thua trên lỗi thật là l�
 - **Hướng cải thiện tiếp (chưa làm):**
   - train v4 với nhiều dữ liệu hơn, chọn checkpoint theo VSEC-dev;
   - trộn một phần dữ liệu lỗi thật vào tập train;
-  - kết hợp A và C (trên VSEC, có 758 vị trí chỉ C v4 sửa đúng và 1.664 vị trí chỉ A sửa đúng).
+  - kết hợp A và C (trên VSEC, có 760 vị trí chỉ C v4 sửa đúng và 1.665 vị trí chỉ A sửa đúng).
 
 ## 5. Ví dụ tiêu biểu
 
@@ -173,16 +173,17 @@ Các ví dụ được đánh số theo `outputs/tables/error_examples.md`. Ví 
 - A: sửa `ngợi` → `ngơi`, thành "cơ ngơi", đúng ngữ pháp nhưng sai nghĩa. C: **ca** ngợi.
 - Nhận xét: gold chỉ sửa "cơ" → "ca". A chọn sửa sai âm tiết vì "cơ ngơi" là một cụm phổ biến trong LM.
 
-**Ví dụ 21. Cả hai sai: hai lỗi liền kề (VSEC).**
+**Ví dụ 21. Cả hai sai: lỗi tách âm tiết (VSEC).**
 
-- src: vay vốn tín **chất** để **phụ** vụ cho hoạt động nuôi trồng
-- A: sửa được `chất` → **chấp** nhưng bỏ sót `phụ` → `phục`. C: không sửa gì.
-- Nhận xét: cả hai lỗi đều tạo ra từ có thật. Với "phụ" → "phục", hình phạt khi sửa một âm tiết hợp lệ của A lớn hơn mức chênh điểm LM. C thì bỏ qua cả hai, đúng với hồ sơ "thận trọng" đã nêu ở mục 1.
+- src: Từ **b ài** toán, Giáo viên yêu cầu học sinh khái quát… Gold: Từ **bài** toán.
+- A: sửa thành `bỏ tài` và còn sửa quá tay `khái` → `khối`. C: không sửa gì.
+- Nhận xét: A giữ ánh xạ một âm tiết sang một âm tiết, nên không thể ghép "b ài" thành "bài". Nó chỉ chọn được hai âm tiết riêng lẻ hợp với LM. C có thể ghép nhưng hiếm khi thấy kiểu lỗi này khi train (tách/ghép chiếm 0% Syn-train), nên bỏ qua.
 
-**Ví dụ 22. Cả hai sai: viết tắt hoặc tên câu lạc bộ (Viwiki).**
+**Ví dụ 22. Cả hai sai: lỗi dấu thanh tạo ra từ có thật ở đầu câu (Viwiki).**
 
-- src: **Chel** 85 điểm. Gold: chelsea.
-- Nhận xét: đây là lỗi "tách/ghép" và viết tắt, nằm ngoài phạm vi thiết kế của cả hai mô hình (giữ một âm tiết sang một âm tiết, không có tên riêng nước ngoài trong từ điển). Ví dụ này cũng cho thấy nhãn của Viwiki có độ nhiễu nhất định.
+- src: **Dùng** lại nitrôglyxêrin các triệu chứng có thể dừng. Gold: **dừng** lại.
+- A và C đều giữ nguyên.
+- Nhận xét: "Dùng lại" là cụm hợp lệ và phổ biến. Muốn sửa phải hiểu nghĩa cả câu (ngừng dùng thuốc thì triệu chứng dừng). Gold cũng đổi chữ hoa đầu câu thành chữ thường, cho thấy nhãn của Viwiki có độ nhiễu nhất định.
 
 **Ví dụ 23. Cả hai sai: lỗi cần kiến thức thế giới (Syn).**
 
@@ -198,5 +199,5 @@ Các ví dụ được đánh số theo `outputs/tables/error_examples.md`. Ví 
 3. **Hai mô hình bổ sung cho nhau.** C mạnh ở lỗi sai nhiều ký tự và lỗi cần ngữ cảnh rộng, A mạnh ở lỗi dấu. Kết hợp hai mô hình (ví dụ dùng A tạo ứng viên rồi C xếp hạng, hoặc ensemble) là hướng phát triển tự nhiên.
 4. **Kết quả ablation C:**
    - Tăng mật độ nhiễu lên 12% có lợi.
-   - Train lâu hơn trên dữ liệu tổng hợp lại có hại khi chuyển sang lỗi thật (cùng mật độ 5%: 0,572 → 0,536 trên VSEC).
+   - Train lâu hơn trên dữ liệu tổng hợp lại có hại khi chuyển sang lỗi thật (cùng mật độ 5%: 0,571 → 0,536 trên VSEC).
    - Loại lỗi sinh nhiễu là yếu tố ảnh hưởng lớn nhất (+12,7 điểm F1 trên VSEC).

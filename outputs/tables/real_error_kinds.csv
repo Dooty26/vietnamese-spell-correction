@@ -7,10 +7,10 @@ syn_test,Sai ≥2 ký tự,1033,0.0925
 syn_test,Tách/ghép âm tiết,0,0.0
 vsec_test,Chỉ sai dấu thanh,4288,0.4957
 vsec_test,Chỉ sai hoa/thường,5,0.0006
-vsec_test,Sai 1 chữ cái (thêm/bớt/thay/đảo),2211,0.2556
+vsec_test,Sai 1 chữ cái (thêm/bớt/thay/đảo),2212,0.2557
 vsec_test,Sai dấu phụ (ă â ê ô ơ ư đ),1038,0.12
-vsec_test,Sai ≥2 ký tự,382,0.0442
-vsec_test,Tách/ghép âm tiết,727,0.084
+vsec_test,Sai ≥2 ký tự,392,0.0453
+vsec_test,Tách/ghép âm tiết,715,0.0827
 viwiki_test,Chỉ sai dấu thanh,525,0.3407
 viwiki_test,Chỉ sai hoa/thường,5,0.0032
 viwiki_test,Sai 1 chữ cái (thêm/bớt/thay/đảo),534,0.3465
@@ -19,7 +19,7 @@ viwiki_test,Sai ≥2 ký tự,115,0.0746
 viwiki_test,Tách/ghép âm tiết,120,0.0779
 syn_train,Chỉ sai dấu thanh,2941,0.0659
 syn_train,Chỉ sai hoa/thường,0,0.0
-syn_train,Sai 1 chữ cái (thêm/bớt/thay/đảo),37398,0.8375
+syn_train,Sai 1 chữ cái (thêm/bớt/thay/đảo),37404,0.8377
 syn_train,Sai dấu phụ (ă â ê ô ơ ư đ),163,0.0037
 syn_train,Sai ≥2 ký tự,4144,0.0928
-syn_train,Tách/ghép âm tiết,6,0.0001
+syn_train,Tách/ghép âm tiết,0,0.0

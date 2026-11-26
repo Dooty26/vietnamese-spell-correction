@@ -607,6 +607,34 @@ def _status(items) -> dict[int, str]:
     return {x["pos"]: x["cat"] for x in items}
 
 
+def paired(per_sent, A: str, B: str, ds: str) -> list[tuple[dict, dict, list, list]]:
+    """Ghép từng câu của A và B theo `id` -> [(bản ghi A, bản ghi B, phân loại A, phân loại B)].
+
+    Không ghép theo thứ tự dòng: hai file có thể khác thứ tự. Báo lỗi nếu tập id khác nhau (vd một file chạy
+    với --limit) hoặc cùng id mà src/tgt khác nhau.
+    """
+    ra, ia = per_sent[(A, ds)]
+    rb, ib = per_sent[(B, ds)]
+    by_id = {}
+    for r, it in zip(rb, ib):
+        if r.get("id") is None or r["id"] in by_id:
+            raise ValueError(f"{B}__{ds}: thiếu id hoặc id trùng ({r.get('id')})")
+        by_id[r["id"]] = (r, it)
+    ids_a = [r.get("id") for r in ra]
+    if None in ids_a or len(set(ids_a)) != len(ids_a):
+        raise ValueError(f"{A}__{ds}: thiếu id hoặc id trùng")
+    if set(ids_a) != by_id.keys():
+        raise ValueError(f"{A}__{ds} ({len(ids_a)} câu) và {B}__{ds} ({len(by_id)} câu) không cùng tập câu; "
+                         f"{len(set(ids_a) - by_id.keys())} id chỉ có ở {A}, {len(by_id.keys() - set(ids_a))} chỉ có ở {B}")
+    out = []
+    for r, it in zip(ra, ia):
+        r2, it2 = by_id[r["id"]]
+        if normalize(r["src"]) != normalize(r2["src"]) or normalize(r["tgt"]) != normalize(r2["tgt"]):
+            raise ValueError(f"{ds} id {r['id']}: src/tgt của {A} và {B} khác nhau")
+        out.append((r, r2, it, it2))
+    return out
+
+
 def comparison_rows(per_sent, models: list[str]) -> list[dict]:
     rows = []
     A = models[0]
@@ -614,10 +642,8 @@ def comparison_rows(per_sent, models: list[str]) -> list[dict]:
         for ds in DATASETS:
             if (A, ds) not in per_sent or (B, ds) not in per_sent:
                 continue
-            ra, ia = per_sent[(A, ds)]
-            rb, ib = per_sent[(B, ds)]
             c = Counter()
-            for x, y in zip(ia, ib):
+            for _, _, x, y in paired(per_sent, A, B, ds):
                 sa, sb = _status(x), _status(y)
                 for pos in sa.keys() | sb.keys():
                     a, b = sa.get(pos), sb.get(pos)
@@ -645,9 +671,7 @@ def comparison_examples(per_sent, models, rng, start) -> list[str]:
             for ds in DATASETS:
                 if (A, ds) not in per_sent or (B, ds) not in per_sent:
                     continue
-                ra, ia = per_sent[(A, ds)]
-                _, ib = per_sent[(B, ds)]
-                for r, x, y in zip(ra, ia, ib):
+                for r, rb, x, y in paired(per_sent, A, B, ds):
                     if len(_tok(r["src"])) > 45:
                         continue
                     sa, sb = _status(x), _status(y)
@@ -658,17 +682,17 @@ def comparison_examples(per_sent, models, rng, start) -> list[str]:
                             continue
                         ok = [(v == w) if w != "!" else (v != "sua_dung") for w, v in zip(want, (a, b))]
                         if all(ok):
-                            cands.append((ds, r, pos))
+                            cands.append((ds, r, pos, rb))
             rng.shuffle(cands)
             per_ds = Counter()
             k = 0
-            for ds, r, pos in cands:
-                if per_ds[ds] >= 1 and k < 3 and len({d for d, _, _ in cands}) > 1:
+            for ds, r, pos, rb in cands:
+                if per_ds[ds] >= 1 and k < 3 and len({c[0] for c in cands}) > 1:
                     continue
                 per_ds[ds] += 1
                 k += 1
                 n += 1
-                preds = {A: r["pred"], B: next(q["pred"] for q in per_sent[(B, ds)][0] if q.get("id") == r.get("id"))}
+                preds = {A: r["pred"], B: rb["pred"]}
                 md.append(render_example(r, [pos], f"Ví dụ {n}. {title} [{r.get('id')}]", preds))
                 if k >= 3:
                     break

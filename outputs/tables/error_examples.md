@@ -53,13 +53,13 @@ In **đậm**: ở `src` là vị trí lỗi thật hoặc bị mô hình sửa;
 
   - Phân loại: Sửa quá tay / Từ thường trong từ điển: `khô` → `khi` (đúng: `khô`)
 
-**Ví dụ 7. VSEC – sửa sai ứng viên [vsec-8491]**
+**Ví dụ 7. VSEC – sửa sai ứng viên [vsec-8112]**
 
-- src : **T** **ính** đến ngày 1 / 4 / 2019 , dân số 53 …
-- pred: **Ở** **tính** đến ngày 1 / 4 / 2019 , dân số 53 …
-- tgt : **Tính** **∅** đến ngày 1 / 4 / 2019 , dân số 53 …
+- src : Tính **nhuẫn** nhuyễn là nhanh chóng tổ hợp các yếu tố riêng **lẽ** của …
+- pred: Tính **nhuận** nhuyễn là nhanh chóng tổ hợp các yếu tố riêng **lẻ** của …
+- tgt : Tính **nhuần** nhuyễn là nhanh chóng tổ hợp các yếu tố riêng **lẻ** của …
 
-  - Phân loại: Sửa sai ứng viên: `T` → `Ở` (đúng: `Tính`)
+  - Phân loại: Sửa sai ứng viên: `nhuẫn` → `nhuận` (đúng: `nhuần`)
 
 **Ví dụ 8. VSEC – sửa sai ứng viên [vsec-135]**
 
@@ -69,21 +69,21 @@ In **đậm**: ở `src` là vị trí lỗi thật hoặc bị mô hình sửa;
 
   - Phân loại: Sửa sai ứng viên: `ghĩ` → `cho` (đúng: `ghi`)
 
-**Ví dụ 9. VSEC – bỏ sót [vsec-1498]**
+**Ví dụ 9. VSEC – bỏ sót [vsec-4956]**
 
-- src : … điện trở gây ra **dự** thay đổi điện thế của mạch cầu **điên** trở .
-- pred: … điện trở gây ra **sự** thay đổi điện thế của mạch cầu điên trở .
-- tgt : … điện trở gây ra **sự** thay đổi điện thế của mạch cầu **điện** trở .
+- src : … kiến thức cơ bản về phân tích và thiết kế hệ thống **ta** cứu văn bản luật .
+- pred: … kiến thức cơ bản về phân tích và thiết kế hệ thống ta cứu văn bản luật .
+- tgt : … kiến thức cơ bản về phân tích và thiết kế hệ thống **tra** cứu văn bản luật .
 
-  - Phân loại: Bỏ sót: `điên` → `điên` (đúng: `điện`)
+  - Phân loại: Bỏ sót: `ta` → `ta` (đúng: `tra`)
 
-**Ví dụ 10. VSEC – bỏ sót [vsec-4351]**
+**Ví dụ 10. VSEC – bỏ sót [vsec-6447]**
 
-- src : … vì thế khi chơi dễ gây ra nguy hiểm cho trẻ như **dứt** tay , xước da .
-- pred: … vì thế khi chơi dễ gây ra nguy hiểm cho trẻ như dứt tay , xước da .
-- tgt : … vì thế khi chơi dễ gây ra nguy hiểm cho trẻ như **đứt** tay , xước da .
+- src : … của nhà thơ với đơn vị cũ và mảnh đất miền Tây **đẩy** kỉ niệm .
+- pred: … của nhà thơ với đơn vị cũ và mảnh đất miền Tây đẩy kỉ niệm .
+- tgt : … của nhà thơ với đơn vị cũ và mảnh đất miền Tây **đầy** kỉ niệm .
 
-  - Phân loại: Bỏ sót: `dứt` → `dứt` (đúng: `đứt`)
+  - Phân loại: Bỏ sót: `đẩy` → `đẩy` (đúng: `đầy`)
 
 **Ví dụ 11. VSEC – sửa quá tay từ thật [vsec-984]**
 
@@ -139,7 +139,7 @@ In **đậm**: ở `src` là vị trí lỗi thật hoặc bị mô hình sửa;
 | over_tu_thuong | 1133 | 44.9% ca sửa quá tay; tỉ lệ nền trong token src: 74.5%; trong lỗi thật: 72.0% |
 | over_rate_tu_thuong | 0.00288 | xác suất một token thuộc nhóm bị sửa quá tay |
 | syn_test_over_per_clean_token | 0.00279 | lỗi thật/token = 0.0373; sửa quá tay/lỗi thật = 0.07 |
-| vsec_test_over_per_clean_token | 0.00329 | lỗi thật/token = 0.0351; sửa quá tay/lỗi thật = 0.09 |
+| vsec_test_over_per_clean_token | 0.0033 | lỗi thật/token = 0.0351; sửa quá tay/lỗi thật = 0.09 |
 | viwiki_test_over_per_clean_token | 0.0048 | lỗi thật/token = 0.0029; sửa quá tay/lỗi thật = 1.64 |
 | neu_bo_qua_ten_rieng | 0.339 | F1 nếu không sửa nhóm này: P=0.261 R=0.483 (mất 6 sửa đúng) |
 | neu_bo_qua_ten_rieng+ngoai_tu_dien | 0.3634 | F1 nếu không sửa nhóm này: P=0.338 R=0.393 (mất 145 sửa đúng) |
@@ -190,19 +190,19 @@ In **đậm**: ở `src` là vị trí lỗi thật hoặc bị mô hình sửa;
 - bartpho: … về tính ác liệt của cuộc chiến bảo vệ tổ quốc và **ca** ngợi những chiến thắng được viết bởi nhà thơ Francisco González Bocanegra …
 - tgt : … về tính ác liệt của cuộc chiến bảo vệ tổ quốc và **ca** ngợi những chiến thắng được viết bởi nhà thơ Francisco González Bocanegra …
 
-**Ví dụ 21. cả hai sai [vsec-8889]**
+**Ví dụ 21. cả hai sai [vsec-8083]**
 
-- src : … tra có ít nhất 4000 hộ xin vay vốn tín **chất** để **phụ** vụ cho hoạt động nuôi trồng thủy sản .
-- ngram: … tra có ít nhất 4000 hộ xin vay vốn tín **chấp** để phụ vụ cho hoạt động nuôi trồng thủy sản .
-- bartpho: … tra có ít nhất 4000 hộ xin vay vốn tín chất để phụ vụ cho hoạt động nuôi trồng thủy sản .
-- tgt : … tra có ít nhất 4000 hộ xin vay vốn tín **chấp** để **phục** vụ cho hoạt động nuôi trồng thủy sản .
+- src : Từ **b** **ài** toán , Giáo viên yêu cầu học sinh **khái** quát định …
+- ngram: Từ **bỏ** **tài** toán , Giáo viên yêu cầu học sinh **khối** quát định …
+- bartpho: Từ b ài toán , Giáo viên yêu cầu học sinh khái quát định …
+- tgt : Từ **bài** **∅** toán , Giáo viên yêu cầu học sinh khái quát định …
 
-**Ví dụ 22. cả hai sai [viwiki-12116-156]**
+**Ví dụ 22. cả hai sai [viwiki-6988-73]**
 
-- src : … PL với 87 điểm ( HS : 80 - 22 ) , **Chel** 85 điểm ( 65 - 26 ) khi để Bolton cầm hòa …
-- ngram: … PL với 87 điểm ( HS : 80 - 22 ) , Chel 85 điểm ( 65 - 26 ) khi để Bolton cầm hòa …
-- bartpho: … PL với 87 điểm ( HS : 80 - 22 ) , Chel 85 điểm ( 65 - 26 ) khi để Bolton cầm hòa …
-- tgt : … PL với 87 điểm ( HS : 80 - 22 ) , **chelsea** 85 điểm ( 65 - 26 ) khi để Bolton cầm hòa …
+- src : **Dùng** lại nitrôglyxêrin các triệu chứng có thể dừng .
+- ngram: Dùng lại nitrôglyxêrin các triệu chứng có thể dừng .
+- bartpho: Dùng lại nitrôglyxêrin các triệu chứng có thể dừng .
+- tgt : **dừng** lại nitrôglyxêrin các triệu chứng có thể dừng .
 
 **Ví dụ 23. cả hai sai [syn_test-1468]**
 
@@ -213,12 +213,12 @@ In **đậm**: ở `src` là vị trí lỗi thật hoặc bị mô hình sửa;
 
 ## So sánh A: n-gram (3-gram KN) và C: BARTpho v4 (nhiễu dấu)
 
-**Ví dụ 24. ngram đúng, bartpho_v4 sai [vsec-6850]**
+**Ví dụ 24. ngram đúng, bartpho_v4 sai [vsec-981]**
 
-- src : Tuy nhiên , có một số câu hỏi cần phải **đều** chỉnh lại từ ngữ sao cho phù hợp và dễ hiểu .
-- ngram: Tuy nhiên , có một số câu hỏi cần phải **điều** chỉnh lại từ ngữ sao cho phù hợp và dễ hiểu .
-- bartpho_v4: Tuy nhiên , có một số câu hỏi cần phải đều chỉnh lại từ ngữ sao cho phù hợp và dễ hiểu .
-- tgt : Tuy nhiên , có một số câu hỏi cần phải **điều** chỉnh lại từ ngữ sao cho phù hợp và dễ hiểu .
+- src : … những bất hòa trong một tập thể thì có thể đem phương **háp** đem ra áp dụng .
+- ngram: … những bất hòa trong một tập thể thì có thể đem phương **pháp** đem ra áp dụng .
+- bartpho_v4: … những bất hòa trong một tập thể thì có thể đem phương **án** đem ra áp dụng .
+- tgt : … những bất hòa trong một tập thể thì có thể đem phương **pháp** đem ra áp dụng .
 
 **Ví dụ 25. ngram đúng, bartpho_v4 sai [syn_test-1984]**
 
@@ -227,19 +227,19 @@ In **đậm**: ở `src` là vị trí lỗi thật hoặc bị mô hình sửa;
 - bartpho_v4: … xúc khi nghe những thông tin không được kiểm chứng về đàn chỉ .
 - tgt : … xúc khi nghe những thông tin không được kiểm chứng về đàn **chị** .
 
-**Ví dụ 26. ngram đúng, bartpho_v4 sai [viwiki-3046-98]**
+**Ví dụ 26. ngram đúng, bartpho_v4 sai [viwiki-10462-44]**
 
-- src : … các sự kiện quần chúng , thì sẽ giảm xuống là 9 **met** .
-- ngram: … các sự kiện quần chúng , thì sẽ giảm xuống là 9 **mét** .
-- bartpho_v4: … các sự kiện quần chúng , thì sẽ giảm xuống là 9 met .
-- tgt : … các sự kiện quần chúng , thì sẽ giảm xuống là 9 **mét** .
+- src : Ông nội ông , Hugh Jackson , là thợ dệt và lái **buông** ở Carrickfergus , một bến cảng ở bờ Bắc **của** Belfast Lough …
+- ngram: Ông nội ông , Hugh Jackson , là thợ dệt và lái **buôn** ở Carrickfergus , một bến cảng ở bờ Bắc **cửa** Belfast Lough …
+- bartpho_v4: Ông nội ông , Hugh Jackson , là thợ dệt và lái buông ở Carrickfergus , một bến cảng ở bờ Bắc của Belfast Lough …
+- tgt : Ông nội ông , Hugh Jackson , là thợ dệt và lái **buôn** ở Carrickfergus , một bến cảng ở bờ Bắc của Belfast Lough …
 
-**Ví dụ 27. bartpho_v4 đúng, ngram sai [vsec-8827]**
+**Ví dụ 27. bartpho_v4 đúng, ngram sai [vsec-8806]**
 
-- src : … bản RCP4 . 5 , vào cuối thế kỷ , nhiệt độ **tôi** cao tăng 2.8 độ , nhiệt độ tối thấp tăng 2.3 độ …
-- ngram: … bản RCP4 . 5 , vào cuối thế kỷ , nhiệt độ tôi cao tăng 2.8 độ , nhiệt độ tối thấp tăng 2.3 độ …
-- bartpho_v4: … bản RCP4 . 5 , vào cuối thế kỷ , nhiệt độ **tối** cao tăng 2.8 độ , nhiệt độ tối thấp tăng 2.3 độ …
-- tgt : … bản RCP4 . 5 , vào cuối thế kỷ , nhiệt độ **tối** cao tăng 2.8 độ , nhiệt độ tối thấp tăng 2.3 độ …
+- src : **Vê** sinh an toàn thực phẩm là vấn đề nhức nhối trong thời …
+- ngram: Vê sinh an toàn thực phẩm là vấn đề nhức nhối trong thời …
+- bartpho_v4: **Vệ** sinh an toàn thực phẩm là vấn đề nhức nhối trong thời …
+- tgt : **Vệ** sinh an toàn thực phẩm là vấn đề nhức nhối trong thời …
 
 **Ví dụ 28. bartpho_v4 đúng, ngram sai [syn_test-3712]**
 
@@ -248,26 +248,26 @@ In **đậm**: ở `src` là vị trí lỗi thật hoặc bị mô hình sửa;
 - bartpho_v4: Riêng với các doanh nghiệp trên địa bàn tỉnh **Đồng** Nai , cơ quan thuế đã dừng tính tiền chậm nộp 73,7 …
 - tgt : Riêng với các doanh nghiệp trên địa bàn tỉnh **Đồng** Nai , cơ quan thuế đã dừng tính tiền chậm nộp 73,7 …
 
-**Ví dụ 29. bartpho_v4 đúng, ngram sai [viwiki-11033-46]**
+**Ví dụ 29. bartpho_v4 đúng, ngram sai [viwiki-8084-253]**
 
-- src : … tất cả các phe phái trong " Empire Earth " đều có **thưc** trong lịch sử .
-- ngram: … tất cả các phe phái trong " Empire Earth " đều có **thể** trong lịch sử .
-- bartpho_v4: … tất cả các phe phái trong " Empire Earth " đều có **thực** trong lịch sử .
-- tgt : … tất cả các phe phái trong " Empire Earth " đều có **thực** trong lịch sử .
+- src : Những nơi trình diễn nhạc jazz khác có **biễu** diễn nhạc blues hiện đại như Madam ' s Organ Blues Bar …
+- ngram: Những nơi trình diễn nhạc jazz khác có biễu diễn nhạc blues hiện đại như Madam ' s Organ Blues Bar …
+- bartpho_v4: Những nơi trình diễn nhạc jazz khác có **biểu** diễn nhạc blues hiện đại như Madam ' s Organ Blues Bar …
+- tgt : Những nơi trình diễn nhạc jazz khác có **biểu** diễn nhạc blues hiện đại như Madam ' s Organ Blues Bar …
 
-**Ví dụ 30. cả hai sai [vsec-9275]**
+**Ví dụ 30. cả hai sai [vsec-780]**
 
-- src : … rõ ràng đã làm mất niềm tin và sự hài lòng của **khác** nhiều sinh viên .
-- ngram: … rõ ràng đã làm mất niềm tin và sự hài lòng của khác nhiều sinh viên .
-- bartpho_v4: … rõ ràng đã làm mất niềm tin và sự hài lòng của khác nhiều sinh viên .
-- tgt : … rõ ràng đã làm mất niềm tin và sự hài lòng của **khá** nhiều sinh viên .
+- src : … tài chính để tìm kiếm việc làm có tác động quan trọng **lên** quyết định làm thêm , trong khi công việc làm thêm không …
+- ngram: … tài chính để tìm kiếm việc làm có tác động quan trọng **nên** quyết định làm thêm , trong khi công việc làm thêm không …
+- bartpho_v4: … tài chính để tìm kiếm việc làm có tác động quan trọng lên quyết định làm thêm , trong khi công việc làm thêm không …
+- tgt : … tài chính để tìm kiếm việc làm có tác động quan trọng **đến** quyết định làm thêm , trong khi công việc làm thêm không …
 
-**Ví dụ 31. cả hai sai [viwiki-8390-149]**
+**Ví dụ 31. cả hai sai [viwiki-1949-53]**
 
-- src : … mình bị Chúa tể Voldemort giết chết , vì đã lên tiếng **bên** vực cho dân Muggle và những phù thủy Máu bùn .
-- ngram: … mình bị Chúa tể Voldemort giết chết , vì đã lên tiếng bên vực cho dân Muggle và những phù thủy Máu bùn .
-- bartpho_v4: … mình bị Chúa tể Voldemort giết chết , vì đã lên tiếng bên vực cho dân Muggle và những phù thủy Máu bùn .
-- tgt : … mình bị Chúa tể Voldemort giết chết , vì đã lên tiếng **bênh** vực cho dân Muggle và những phù thủy Máu bùn .
+- src : Nguyên nhân tại sao ông được truyền **ngồi** thì vẫn còn tranh cãi , nhiều nhà sử học cổ cho …
+- ngram: Nguyên nhân tại sao ông được truyền ngồi thì vẫn còn tranh cãi , nhiều nhà sử học cổ cho …
+- bartpho_v4: Nguyên nhân tại sao ông được truyền ngồi thì vẫn còn tranh cãi , nhiều nhà sử học cổ cho …
+- tgt : Nguyên nhân tại sao ông được truyền **ngôi** thì vẫn còn tranh cãi , nhiều nhà sử học cổ cho …
 
 **Ví dụ 32. cả hai sai [syn_test-495]**
 

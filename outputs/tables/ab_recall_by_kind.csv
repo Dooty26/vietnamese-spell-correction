@@ -1,11 +1,11 @@
 model,dataset,group,kind,n,cor_r
 ngram,vsec_test,kieu_loi,Chỉ sai dấu thanh,4288,0.8755
 ngram,vsec_test,kieu_loi,Chỉ sai hoa/thường,5,0.0
-ngram,vsec_test,kieu_loi,Sai 1 chữ cái (thêm/bớt/thay/đảo),2203,0.7449
+ngram,vsec_test,kieu_loi,Sai 1 chữ cái (thêm/bớt/thay/đảo),2204,0.745
 ngram,vsec_test,kieu_loi,Sai dấu phụ (ă â ê ô ơ ư đ),1038,0.8969
-ngram,vsec_test,kieu_loi,Sai ≥2 ký tự,363,0.2342
-ngram,vsec_test,kieu_loi,Tách/ghép âm tiết,418,0.0024
-ngram,vsec_test,loai_tu,Lỗi ra từ có thật,6638,0.7763
+ngram,vsec_test,kieu_loi,Sai ≥2 ký tự,372,0.2285
+ngram,vsec_test,kieu_loi,Tách/ghép âm tiết,407,0.0
+ngram,vsec_test,loai_tu,Lỗi ra từ có thật,6637,0.7764
 ngram,vsec_test,loai_tu,Lỗi ra từ không có thật,1677,0.7507
 ngram,viwiki_test,kieu_loi,Chỉ sai dấu thanh,525,0.6267
 ngram,viwiki_test,kieu_loi,Chỉ sai hoa/thường,5,0.0
@@ -17,11 +17,11 @@ ngram,viwiki_test,loai_tu,Lỗi ra từ có thật,1159,0.528
 ngram,viwiki_test,loai_tu,Lỗi ra từ không có thật,357,0.3894
 bartpho,vsec_test,kieu_loi,Chỉ sai dấu thanh,4288,0.3302
 bartpho,vsec_test,kieu_loi,Chỉ sai hoa/thường,5,0.0
-bartpho,vsec_test,kieu_loi,Sai 1 chữ cái (thêm/bớt/thay/đảo),2203,0.542
+bartpho,vsec_test,kieu_loi,Sai 1 chữ cái (thêm/bớt/thay/đảo),2204,0.5417
 bartpho,vsec_test,kieu_loi,Sai dấu phụ (ă â ê ô ơ ư đ),1038,0.4913
-bartpho,vsec_test,kieu_loi,Sai ≥2 ký tự,363,0.4435
-bartpho,vsec_test,kieu_loi,Tách/ghép âm tiết,418,0.0885
-bartpho,vsec_test,loai_tu,Lỗi ra từ có thật,6638,0.3286
+bartpho,vsec_test,kieu_loi,Sai ≥2 ký tự,372,0.4328
+bartpho,vsec_test,kieu_loi,Tách/ghép âm tiết,407,0.0909
+bartpho,vsec_test,loai_tu,Lỗi ra từ có thật,6637,0.3286
 bartpho,vsec_test,loai_tu,Lỗi ra từ không có thật,1677,0.678
 bartpho,viwiki_test,kieu_loi,Chỉ sai dấu thanh,525,0.3238
 bartpho,viwiki_test,kieu_loi,Chỉ sai hoa/thường,5,0.0
@@ -33,11 +33,11 @@ bartpho,viwiki_test,loai_tu,Lỗi ra từ có thật,1159,0.2494
 bartpho,viwiki_test,loai_tu,Lỗi ra từ không có thật,357,0.3305
 bartpho_v4,vsec_test,kieu_loi,Chỉ sai dấu thanh,4288,0.7181
 bartpho_v4,vsec_test,kieu_loi,Chỉ sai hoa/thường,5,0.0
-bartpho_v4,vsec_test,kieu_loi,Sai 1 chữ cái (thêm/bớt/thay/đảo),2203,0.596
+bartpho_v4,vsec_test,kieu_loi,Sai 1 chữ cái (thêm/bớt/thay/đảo),2204,0.5957
 bartpho_v4,vsec_test,kieu_loi,Sai dấu phụ (ă â ê ô ơ ư đ),1038,0.764
-bartpho_v4,vsec_test,kieu_loi,Sai ≥2 ký tự,363,0.5647
-bartpho_v4,vsec_test,kieu_loi,Tách/ghép âm tiết,418,0.2584
-bartpho_v4,vsec_test,loai_tu,Lỗi ra từ có thật,6638,0.6214
+bartpho_v4,vsec_test,kieu_loi,Sai ≥2 ký tự,372,0.5511
+bartpho_v4,vsec_test,kieu_loi,Tách/ghép âm tiết,407,0.2678
+bartpho_v4,vsec_test,loai_tu,Lỗi ra từ có thật,6637,0.6217
 bartpho_v4,vsec_test,loai_tu,Lỗi ra từ không có thật,1677,0.8187
 bartpho_v4,viwiki_test,kieu_loi,Chỉ sai dấu thanh,525,0.5048
 bartpho_v4,viwiki_test,kieu_loi,Chỉ sai hoa/thường,5,0.0
