@@ -127,3 +127,19 @@ def test_s4_ablation_reads_chosen_values_from_checkpoint(tmp_path):
     (tmp_path / "config.json").write_text(json.dumps({"decoding": {"beam_size": 5}}), encoding="utf-8")
     with pytest.raises(ValueError, match="thiếu tham số S4"):
         ab.load_chosen(tmp_path)
+
+
+def test_s4_ablation_writes_into_new_directory(tmp_path):
+    import csv
+    import importlib.util
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location(
+        "ablate_ngram_s4", Path(__file__).resolve().parents[1] / "scripts" / "ablate_ngram_s4.py")
+    ab = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ab)
+    out = tmp_path / "new_run" / "sub" / "results.csv"
+    ab.write_rows([{"dataset": "vsec_test", "variant": "b", "cor_f1": 0.5},
+                   {"dataset": "vsec_test", "variant": "a", "cor_f1": 0.4}], out)
+    with open(out, encoding="utf-8") as f:
+        assert [r["variant"] for r in csv.DictReader(f)] == ["a", "b"]

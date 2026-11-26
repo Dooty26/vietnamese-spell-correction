@@ -55,6 +55,16 @@ def _run(job: tuple[str, str]) -> dict:
             "n_edits": m["n_edits"]}
 
 
+def write_rows(rows: list[dict], out: Path) -> None:
+    """Ghi bảng ablation (sắp theo dataset, variant); tạo thư mục cha nếu chưa có."""
+    rows = sorted(rows, key=lambda r: (r["dataset"], r["variant"]))
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with open(out, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0]))
+        w.writeheader()
+        w.writerows(rows)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--checkpoint", default="outputs/checkpoints/ngram/o3_kneser_ney")
@@ -67,18 +77,15 @@ def main() -> None:
     log = get_logger()
     chosen = load_chosen(args.s4_checkpoint)
     log.info("Giá trị luật S4 (từ %s): %s", args.s4_checkpoint, chosen)
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)  # tạo trước khi chạy: lỗi đường dẫn lộ ra ngay, không phải sau vài giờ
     jobs = list(itertools.product(chosen, args.data))
     rows = []
     with Pool(args.workers, initializer=_init, initargs=(args.checkpoint, chosen)) as pool:
         for row in pool.imap_unordered(_run, jobs):
             rows.append(row)
             log.info("[%d/%d] %s", len(rows), len(jobs), row)
-    rows.sort(key=lambda r: (r["dataset"], r["variant"]))
-    out = Path(args.out)
-    with open(out, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=list(rows[0]))
-        w.writeheader()
-        w.writerows(rows)
+    write_rows(rows, out)
     log.info("Đã ghi %s", out)
 
 

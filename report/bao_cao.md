@@ -5,14 +5,14 @@ lang: vi
 ---
 
 <!--
-Trạng thái bản thảo (task S7a): mục 1–4 hoàn chỉnh; mục 5 mới có kết quả mô hình A và ablation A.
-Các chỗ đánh dấu [chờ BARTpho] / [chờ hình] / [cần bổ sung] sẽ được điền ở task S7b.
+Trạng thái bản thảo: mục 1–6 đã có đủ kết quả của mô hình A và C (BARTpho v3, v4 và ablation mật độ nhiễu).
+Còn đánh dấu [cần bổ sung]: kết quả lưới cuối của Bảng 5.4 và phần Phân công công việc.
 Mọi số liệu lấy từ outputs/tables/*.csv, data/processed/stats_*.json, data/processed/syn_*.stats.json và configs/*.yaml.
 -->
 
 # Tóm tắt
 
-Báo cáo trình bày một hệ thống phát hiện và sửa lỗi chính tả tiếng Việt ở mức âm tiết, so sánh hai hướng tiếp cận: (A) mô hình kênh nhiễu (noisy channel) kết hợp mô hình ngôn ngữ n-gram Kneser-Ney tự cài đặt và giải mã beam search; (C) tinh chỉnh mô hình sinh chuỗi BARTpho-syllable. Dữ liệu huấn luyện được sinh tự động từ kho tin tức Binhvq bằng sáu loại lỗi tổng hợp (vùng miền, Telex, trượt phím, teencode, viết tắt, biến đổi ký tự ngẫu nhiên); việc đánh giá thực hiện trên một tập lỗi tổng hợp và hai tập lỗi thật (VSEC – tin tức, Viwiki-spelling – Wikipedia) bằng cùng một thủ tục căn chỉnh âm tiết. Mô hình A đạt Correction F1 là 0,898 trên Syn-test, 0,778 trên VSEC-test nhưng chỉ 0,304 trên Viwiki-test, nơi mật độ lỗi rất thấp (0,29%) khiến các lần sửa quá tay chiếm ưu thế. Thí nghiệm loại bỏ (ablation) cho thấy làm trơn Kneser-Ney vượt trội rõ rệt so với Laplace và bậc 3 là điểm cân bằng hợp lý giữa chất lượng và chi phí. Kết quả của mô hình C: [chờ BARTpho].
+Báo cáo trình bày một hệ thống phát hiện và sửa lỗi chính tả tiếng Việt ở mức âm tiết, so sánh hai hướng tiếp cận: (A) mô hình kênh nhiễu (noisy channel) kết hợp mô hình ngôn ngữ n-gram Kneser-Ney tự cài đặt và giải mã beam search; (C) tinh chỉnh mô hình sinh chuỗi BARTpho-syllable. Dữ liệu huấn luyện được sinh tự động từ kho tin tức Binhvq bằng sáu loại lỗi tổng hợp (vùng miền, Telex, trượt phím, teencode, viết tắt, biến đổi ký tự ngẫu nhiên); việc đánh giá thực hiện trên một tập lỗi tổng hợp và hai tập lỗi thật (VSEC – tin tức, Viwiki-spelling – Wikipedia) bằng cùng một thủ tục căn chỉnh âm tiết. Mô hình A đạt Correction F1 là 0,898 trên Syn-test, 0,778 trên VSEC-test nhưng chỉ 0,304 trên Viwiki-test, nơi mật độ lỗi rất thấp (0,29%) khiến các lần sửa quá tay chiếm ưu thế. Thí nghiệm loại bỏ (ablation) cho thấy làm trơn Kneser-Ney vượt trội rõ rệt so với Laplace và bậc 3 là điểm cân bằng hợp lý giữa chất lượng và chi phí. Mô hình C (BARTpho huấn luyện trên 150.000 cặp) đạt Correction F1 cao nhất trên Syn-test (0,959) và gần như không sửa quá tay, nhưng chỉ đạt 0,536 trên VSEC-test và 0,240 trên Viwiki-test. Phân tích lỗi cho thấy nguyên nhân chính là lệch phân bố loại lỗi: một nửa lỗi thật là sai dấu thanh, trong khi dữ liệu tổng hợp hầu như không có loại này. Khi sinh lại nhiễu với nhiều lỗi dấu (C v4, 50.000 cặp), Correction F1 trên VSEC-test tăng lên 0,749 và trên Viwiki-test lên 0,322, vượt mô hình A ban đầu trên Viwiki.
 
 # 1. Giới thiệu
 
@@ -139,7 +139,11 @@ Bảng 2.3 tóm tắt các tập lỗi thật sau chuẩn hóa (`stats_real.json
 | VSEC-test | 7.468 | 7.005 | 8.643 | 3,51% | 32,99 | 32 | 70 |
 | Viwiki-test | 15.153 | 1.281 | 1.542 | 0,29% | 34,84 | 31 | 244 |
 
-Hai tập lỗi thật khác nhau rất rõ về phân bố. VSEC là tập “dày lỗi”: khoảng 94% số câu có ít nhất một lỗi, trung bình 1,16 lỗi mỗi câu và mật độ 3,5% token. Viwiki là tập “thưa lỗi”: chỉ khoảng 8,3% số câu có lỗi (tức khoảng 92% câu sạch) và mật độ lỗi chỉ 0,29% token, thấp hơn VSEC khoảng 12 lần. Vì vậy, trên Viwiki, chỉ cần mô hình sửa nhầm một tỉ lệ nhỏ trong số câu sạch là độ chính xác (precision) đã giảm mạnh. Hai cách chia VSEC-dev/VSEC-test có phân bố gần như trùng nhau, cho thấy việc chỉnh tham số trên VSEC-dev là đại diện. [chờ hình: `outputs/figures/` – phân bố độ dài câu và mật độ lỗi của ba tập, do task S5a tạo]
+Hai tập lỗi thật khác nhau rất rõ về phân bố. VSEC là tập “dày lỗi”: khoảng 94% số câu có ít nhất một lỗi, trung bình 1,16 lỗi mỗi câu và mật độ 3,5% token. Viwiki là tập “thưa lỗi”: chỉ khoảng 8,3% số câu có lỗi (tức khoảng 92% câu sạch) và mật độ lỗi chỉ 0,29% token, thấp hơn VSEC khoảng 12 lần. Vì vậy, trên Viwiki, chỉ cần mô hình sửa nhầm một tỉ lệ nhỏ trong số câu sạch là độ chính xác (precision) đã giảm mạnh. Hai cách chia VSEC-dev/VSEC-test có phân bố gần như trùng nhau, cho thấy việc chỉnh tham số trên VSEC-dev là đại diện.
+
+![Phân bố độ dài câu của các tập](../outputs/figures/eda_sentence_length.png)
+
+![Mật độ lỗi của các tập](../outputs/figures/eda_error_density.png)
 
 ## 2.4. Sinh lỗi tổng hợp
 
@@ -185,7 +189,9 @@ Ba tập tổng hợp được sinh với seed khác nhau (train 42, val 43, tes
 | Teencode | 1,07% | 0,90% | 0,99% |
 | Viết tắt | 0,26% | 0,25% | 0,23% |
 
-Có hai điểm khác biệt so với cấu hình. Thứ nhất, mật độ lỗi tính trên toàn bộ token (khoảng 4,2%) thấp hơn 5% vì 15% số câu được giữ sạch và vì mẫu số gồm cả dấu câu, số – những token không bao giờ bị làm nhiễu. Thứ hai, phân bố loại lỗi thực tế lệch so với trọng số: teencode và viết tắt chỉ áp dụng được cho một tập nhỏ âm tiết, còn lỗi vùng miền đòi hỏi kết quả phải là âm tiết hợp lệ; khi các loại này không áp dụng được, bộ sinh chuyển sang loại kế tiếp, mà trượt phím hầu như luôn áp dụng được. Do đó tỉ lệ trượt phím tăng lên khoảng 37–38%, còn teencode và viết tắt giảm xuống khoảng 1% và 0,25%. Mật độ lỗi tổng hợp (4,2%) vẫn gần mật độ của VSEC (3,5%). [chờ hình: `outputs/figures/` – phân bố loại lỗi, do task S5a tạo]
+Có hai điểm khác biệt so với cấu hình. Thứ nhất, mật độ lỗi tính trên toàn bộ token (khoảng 4,2%) thấp hơn 5% vì 15% số câu được giữ sạch và vì mẫu số gồm cả dấu câu, số – những token không bao giờ bị làm nhiễu. Thứ hai, phân bố loại lỗi thực tế lệch so với trọng số: teencode và viết tắt chỉ áp dụng được cho một tập nhỏ âm tiết, còn lỗi vùng miền đòi hỏi kết quả phải là âm tiết hợp lệ; khi các loại này không áp dụng được, bộ sinh chuyển sang loại kế tiếp, mà trượt phím hầu như luôn áp dụng được. Do đó tỉ lệ trượt phím tăng lên khoảng 37–38%, còn teencode và viết tắt giảm xuống khoảng 1% và 0,25%. Mật độ lỗi tổng hợp (4,2%) vẫn gần mật độ của VSEC (3,5%).
+
+![Phân bố loại lỗi trong dữ liệu tổng hợp](../outputs/figures/eda_error_types.png)
 
 ## 2.5. Chia tập và chống rò rỉ dữ liệu
 
@@ -328,16 +334,16 @@ Sửa lỗi được mô hình hóa là bài toán dịch câu lỗi sang câu �
 
 Batch hiệu dụng = batch mỗi thiết bị × tích lũy gradient × số GPU. Khi chạy trên 2 GPU (Kaggle T4 ×2), mã tự giảm số bước tích lũy để batch hiệu dụng vẫn là 32 (`src/vspell/models/bartpho.py`). Metadata của checkpoint chính chỉ lưu các trường trong cột đầu (epoch, batch mỗi thiết bị, tích lũy gradient, tốc độ học, độ dài, fp16, seed); các trường còn lại lấy từ `configs/bartpho.yaml` tại commit dùng để train.
 
-Quá trình huấn luyện dự kiến dùng `Seq2SeqTrainer` của thư viện Hugging Face Transformers trên GPU của Kaggle hoặc Colab. Một thí nghiệm ablation bổ sung (tùy chọn) huấn luyện ba mô hình trên 50.000 cặp với mật độ nhiễu 5%, 12% và 25% để khảo sát ảnh hưởng của mật độ lỗi trong dữ liệu huấn luyện. [chờ BARTpho]
+Huấn luyện dùng `Seq2SeqTrainer` của Hugging Face Transformers trên GPU của Kaggle (`notebooks/04_bartpho.ipynb`). Ngoài mô hình chính (gọi là **C v3**: bản thứ ba sau khi sửa lỗi tiền xử lý kiểu dấu, mục 5.6), nhóm huấn luyện thêm các mô hình 50.000 cặp × 1 epoch cho hai thí nghiệm ablation: mật độ nhiễu 5%, 12% và 25% (`d05`, `d12`, `d25`), và bộ sinh nhiễu có nhiều lỗi dấu thanh/dấu phụ (**C v4**, `configs/noise_v4.yaml`).
 
 # 4. Thiết lập thực nghiệm
 
 ## 4.1. Môi trường và khả năng tái lập
 
 - **Mô hình A, dữ liệu và đánh giá:** máy tính cá nhân chạy Windows 11, chỉ dùng CPU, Python 3.12. Các thư viện chính được ghim phiên bản trong `requirements.txt`: `pyarrow` 26.0.1, `huggingface_hub` 2.1.1, `numpy` 2.4.4, `pandas` 3.0.2, `PyYAML` 6.0.3, `scikit-learn` 1.9.1, `matplotlib` 3.10.8, `pytest` 9.1.1. Phần lõi của mô hình A (LM, sinh ứng viên, giải mã) chỉ dùng thư viện chuẩn của Python, không cần thư viện học máy.
-- **Mô hình C:** GPU trên Kaggle/Colab với `torch`, `transformers`, `datasets`, `accelerate`, `sentencepiece`; phiên bản cụ thể sẽ được ghim sau lần huấn luyện đầu tiên. [chờ BARTpho]
+- **Mô hình C:** GPU trên Kaggle với `torch`, `transformers` (≥ 4.56; đã chạy 5.24.1), `datasets`, `accelerate`, `sentencepiece`. Notebook ghi danh sách phiên bản thực tế vào `bartpho_pip_freeze.txt` trong thư mục output của Kaggle. Dự đoán trên Viwiki và các phép chấm chạy lại trên CPU của máy cá nhân.
 - **Seed:** 42 cho lấy mẫu Binhvq, chia tập và chia VSEC; 42/43/44 cho sinh nhiễu Syn-train/Syn-val/Syn-test; 42 cho huấn luyện BARTpho. Hàm `set_seed` cố định seed của `random`, `numpy` và `torch`.
-- **Kiểm thử:** bộ test đơn vị trong `tests/` (chuẩn hóa, sinh lỗi, chỉ số đánh giá, LM n-gram, đọc dữ liệu thật, loại trùng, đóng gói, script đánh giá/phân tích) gồm 109 test và đều qua.
+- **Kiểm thử:** bộ test đơn vị trong `tests/` (chuẩn hóa, sinh lỗi, chỉ số đánh giá, LM n-gram, đọc dữ liệu thật, loại trùng, đóng gói, script đánh giá/phân tích) gồm 110 test và đều qua.
 - Toàn bộ quy trình được mô tả trong `README.md`; các thực nghiệm của mô hình A được chạy lại bằng `scripts/run_ngram_experiments.sh`.
 
 ## 4.2. Các tập đánh giá
@@ -380,18 +386,19 @@ Các chỉ số được tính ở mức vi mô (micro) trên toàn tập. Mọi
 
 - **Mô hình A:** cấu trúc mô hình (bậc 3, Kneser-Ney, $D = 0{,}75$, beam 5, chi phí các nguồn ứng viên) được đặt theo kinh nghiệm. Hai tham số ảnh hưởng mạnh nhất đến cân bằng precision/recall là `oov_penalty` và `real_word_penalty` được chỉnh bằng tìm kiếm lưới trên 400 câu đầu của VSEC-dev (`scripts/train_ngram.py --tune`), chọn cặp có Correction F1 cao nhất. Lưới cuối cùng trong `configs/ngram.yaml` là `oov_penalty` ∈ {−0,5; −1,0; −1,5; −3,0} × `real_word_penalty` ∈ {−0,5; −1,0; −1,5; −2,0; −3,0}; giá trị được chọn là (−0,5; −1,5). Các mô hình trong ablation dùng chung tham số giải mã này, không chỉnh lại riêng.
 - **Mô hình A + S4 (luật giảm sửa quá tay, mục 5.5):** bốn tham số của các luật được dò bằng lưới 2 × 2 × 4 × 5 = 80 cấu hình trên **toàn bộ 1.873 câu VSEC-dev** (`scripts/tune_ngram_s4.py`), giữ nguyên các tham số giải mã khác. Tiêu chí chọn là Correction F0.5 (trọng số precision gấp đôi recall) thay vì F1: trên văn bản thật, phần lớn câu không có lỗi nên một lần sửa nhầm gây hại nhiều hơn một lỗi bị bỏ sót. Tiêu chí F0.5 được đặt ra trước khi xem kết quả của S4 trên tập kiểm tra; tuy vậy bản thân các luật S4 được thiết kế sau khi phân tích lỗi của A trên Viwiki-test (xem lưu ý ở mục 5.5).
-- **Mô hình C:** chọn checkpoint theo `eval_loss` trên Syn-val; không dùng VSEC-dev hay các tập lỗi thật để huấn luyện. [chờ BARTpho]
+- **Mô hình C:** chọn checkpoint theo `eval_loss` trên Syn-val; không dùng VSEC-dev hay các tập lỗi thật để huấn luyện hoặc chọn checkpoint.
 - **Viwiki-test** không được dùng cho bất kỳ quyết định nào; **VSEC-test** chỉ dùng để báo cáo.
 
 ## 4.5. Thí nghiệm ablation
 
 - **Ablation A – bậc n-gram và phương pháp làm trơn:** huấn luyện năm LM trên cùng LM-corpus 400.000 câu: bậc 2 Laplace, bậc 2 Kneser-Ney, bậc 3 Laplace, bậc 3 Kneser-Ney (mô hình chính), bậc 4 Kneser-Ney. Mỗi LM được đánh giá bằng perplexity trên 5.000 câu sạch của Syn-val và bằng các chỉ số sửa lỗi trên Syn-test và VSEC-test.
 - **Ablation A – các luật giảm sửa quá tay (S4):** bật lần lượt từng luật (với giá trị đã chọn) trên mô hình A ban đầu và so với khi bật cả bốn, trên VSEC-test và Viwiki-test (`scripts/ablate_ngram_s4.py`). Thí nghiệm này chỉ để báo cáo, không dùng để chọn tham số.
-- **Ablation C – mật độ nhiễu trong dữ liệu huấn luyện** (tùy chọn): 5%, 12%, 25%, mỗi mức 50.000 cặp. [chờ BARTpho]
+- **Ablation C – mật độ nhiễu trong dữ liệu huấn luyện:** 5%, 12%, 25%, mỗi mức 50.000 cặp × 1 epoch, chấm trên VSEC-test.
+- **Ablation C – loại lỗi sinh nhiễu (v4):** giữ nguyên cấu hình của `d12` (cùng 50.000 câu gốc, seed, mật độ 12%, 1 epoch), chỉ đổi tỉ lệ loại lỗi sang `configs/noise_v4.yaml`.
 
 # 5. Kết quả và thảo luận
 
-> Mục này hiện chỉ có kết quả của mô hình A và ablation A. Các ô và đoạn liên quan đến mô hình C được đánh dấu [chờ BARTpho] và sẽ hoàn thiện ở task S7b.
+> Số liệu của mục này lấy từ `outputs/tables/*.csv`, sinh bởi `scripts/evaluate.py` và `scripts/analyze_errors.py --models ngram bartpho bartpho_v4`. Phân tích chi tiết hơn về A và C nằm trong `report/phan_tich_A_vs_C.md`.
 
 ## 5.1. Kết quả chính
 
@@ -401,13 +408,18 @@ Các chỉ số được tính ở mức vi mô (micro) trên toàn tập. Mọi
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
 | Syn-test | Đồng nhất | 0 | 0 | 0 | 0 | 0 | 0 | 0,148 | 0 |
 | | A (n-gram) | 0,929 | 0,943 | 0,936 | 0,891 | 0,905 | **0,898** | 0,719 | 0,127 |
-| | C (BARTpho) | [chờ BARTpho] | | | | | | | |
+| | C v3 (BARTpho) | 0,987 | 0,974 | 0,981 | 0,965 | 0,953 | **0,959** | 0,887 | 0,020 |
+| | C v4 (nhiễu dấu)¹ | 0,972 | 0,963 | 0,968 | 0,916 | 0,908 | 0,912 | 0,795 | 0,066 |
 | VSEC-test | Đồng nhất | 0 | 0 | 0 | 0 | 0 | 0 | 0,062 | 0 |
 | | A (n-gram) | 0,900 | 0,814 | 0,855 | 0,819 | 0,741 | **0,778** | 0,694 | 0,063 |
-| | C (BARTpho) | [chờ BARTpho] | | | | | | | |
+| | C v3 (BARTpho) | 0,943 | 0,407 | 0,569 | 0,888 | 0,384 | 0,536 | 0,387 | 0,026 |
+| | C v4 (nhiễu dấu)¹ | 0,960 | 0,671 | 0,790 | 0,910 | 0,636 | 0,749 | 0,622 | 0,026 |
 | Viwiki-test | Đồng nhất | 0 | 0 | 0 | 0 | 0 | 0 | 0,916 | 0 |
 | | A (n-gram) | 0,259 | 0,569 | 0,356 | 0,221 | 0,487 | **0,304** | 0,834 | 0,128 |
-| | C (BARTpho) | [chờ BARTpho] | | | | | | | |
+| | C v3 (BARTpho) | 0,250 | 0,300 | 0,273 | 0,221 | 0,264 | 0,240 | 0,896 | 0,043 |
+| | C v4 (nhiễu dấu)¹ | 0,328 | 0,414 | 0,366 | 0,288 | 0,365 | **0,322** | 0,890 | 0,059 |
+
+¹ *C v4 được thiết kế sau khi phân tích lỗi trên VSEC-test (xem lưu ý ở mục 5.5), nên kết quả của nó trên hai tập lỗi thật có thể lạc quan hơn thực tế.*
 
 Mô hình đồng nhất cho đúng các giá trị kỳ vọng (P/R/F1 và OC bằng 0; SA bằng tỉ lệ câu sạch: 741/5.000 ≈ 0,148 trên Syn-test), xác nhận bộ chấm hoạt động đúng.
 
@@ -417,30 +429,33 @@ Mô hình đồng nhất cho đúng các giá trị kỳ vọng (P/R/F1 và OC b
 - **Trên VSEC-test** (lỗi thật, cùng miền), Correction F1 giảm còn 0,778. Precision phát hiện vẫn cao (0,900), sự sụt giảm chủ yếu đến từ recall (0,814 so với 0,943 trên Syn-test): một phần lỗi thật nằm ngoài các mẫu lỗi mà bộ sinh ứng viên biết, hoặc là lỗi tách/ghép âm tiết mà mô hình 1–1 không xử lý được. Tỉ lệ sửa quá tay trên câu sạch của VSEC thấp (6,3%).
 - **Trên Viwiki-test** (khác miền, lỗi thưa), kết quả giảm mạnh: Correction F1 chỉ 0,304, do precision rất thấp (0,221). Mô hình thực hiện 3.393 thay đổi trong khi tập chỉ có 1.542 lỗi, và 12,8% câu sạch bị sửa. Với mật độ lỗi 0,29%, mỗi lần sửa nhầm “đắt” hơn nhiều so với trên VSEC. Mặt khác, văn bản Wikipedia chứa nhiều tên riêng, thuật ngữ và từ nước ngoài không có trong LM-corpus tin tức, nên LM đánh giá thấp các âm tiết này và mô hình có xu hướng “sửa” chúng. Độ chính xác câu của mô hình A trên Viwiki (0,834) thậm chí **thấp hơn** mô hình đồng nhất (0,916): trên tập thưa lỗi này, áp dụng mô hình A làm hại nhiều câu hơn số câu được sửa đúng.
 
-Về **CH2**, kết quả của mô hình A cho thấy khả năng tổng quát hóa phụ thuộc mạnh vào cả loại lỗi lẫn miền: chuyển từ lỗi tổng hợp sang lỗi thật cùng miền làm Correction F1 giảm khoảng 0,12, còn chuyển sang miền khác với lỗi thưa làm giảm thêm khoảng 0,47. So sánh với mô hình C: [chờ BARTpho].
+Về **CH2**, kết quả của mô hình A cho thấy khả năng tổng quát hóa phụ thuộc mạnh vào cả loại lỗi lẫn miền: chuyển từ lỗi tổng hợp sang lỗi thật cùng miền làm Correction F1 giảm khoảng 0,12, còn chuyển sang miền khác với lỗi thưa làm giảm thêm khoảng 0,47. Mô hình C v3 tổng quát hóa kém hơn nhiều: Correction F1 giảm 0,42 khi chuyển từ Syn-test (0,959) sang VSEC-test (0,536) và thêm 0,30 khi sang Viwiki-test (0,240). Điểm cao trên Syn-test vì vậy phản ánh độ khớp với bộ sinh nhiễu hơn là khả năng sửa lỗi thật. C v3 lại có hồ sơ "thận trọng": precision trên VSEC (0,888) cao hơn A (0,819) và tỉ lệ sửa quá tay thấp hơn trên cả ba tập, nhưng recall chỉ 0,384 so với 0,741 của A. Mục 5.6 phân tích nguyên nhân và thí nghiệm v4.
 
-[chờ hình: `outputs/figures/` – biểu đồ cột Correction F1 của A và C trên ba tập, do task S5a/S5b tạo]
+Về **CH1**, trên VSEC-test, đối chiếu từng vị trí lỗi thật (`model_comparison.csv`): cả hai mô hình cùng sửa đúng 2.876 vị trí, chỉ A đúng 3.529, chỉ C v3 đúng 442 và cả hai sai 1.796. Gần như mọi lỗi C v3 sửa được thì A cũng sửa được, nhưng điều ngược lại không đúng.
+
+![Hình 5.1. Correction F1 của các mô hình trên ba tập kiểm tra](../outputs/figures/model_comparison_test_sets.png)
 
 ## 5.2. Recall theo loại lỗi
 
-**Bảng 5.2.** Recall phát hiện (Det R) và sửa (Cor R) theo loại lỗi trên Syn-test (`outputs/tables/per_error_type.csv`), mô hình A.
+**Bảng 5.2.** Recall phát hiện (Det R) và sửa (Cor R) theo loại lỗi trên Syn-test (`outputs/tables/per_error_type.csv`).
 
-| Loại lỗi | Số lỗi | Det R | Cor R | C: Cor R |
-|---|---:|---:|---:|---:|
-| Trượt phím | 4.165 | 0,898 | 0,844 | [chờ BARTpho] |
-| Telex | 3.371 | 1,000 | 0,996 | [chờ BARTpho] |
-| Vùng miền | 3.058 | 0,943 | 0,902 | [chờ BARTpho] |
-| Biến đổi ký tự | 441 | 0,923 | 0,850 | [chờ BARTpho] |
-| Teencode | 111 | 0,955 | 0,694 | [chờ BARTpho] |
-| Viết tắt | 26 | 1,000 | 0,923 | [chờ BARTpho] |
+| Loại lỗi | Số lỗi | A: Det R | A: Cor R | C v3: Cor R | C v4: Cor R |
+|---|---:|---:|---:|---:|---:|
+| Trượt phím | 4.165 | 0,898 | 0,844 | **0,945** | 0,908 |
+| Telex | 3.371 | 1,000 | **0,996** | 0,973 | 0,923 |
+| Vùng miền | 3.058 | 0,943 | 0,902 | **0,955** | 0,895 |
+| Biến đổi ký tự | 441 | 0,923 | 0,850 | 0,873 | **0,875** |
+| Teencode | 111 | 0,955 | 0,694 | **0,919** | 0,910 |
+| Viết tắt | 26 | 1,000 | **0,923** | 0,885 | **0,923** |
 
 - **Lỗi Telex** gần như được sửa hoàn toàn (Cor R 0,996): chuỗi Telex chưa chuyển đổi hầu như không bao giờ là âm tiết hợp lệ nên dễ phát hiện, và bộ giải mã Telex cho ra đúng một ứng viên có chi phí thấp nhất.
 - **Lỗi vùng miền** – loại khó nhất về lý thuyết vì luôn là lỗi từ có thật – vẫn đạt Det R 0,943 và Cor R 0,902. Điều này cho thấy hình phạt `real_word_penalty` = −1,5 đủ mềm để LM bậc 3 thay được âm tiết có thật khi ngữ cảnh đủ rõ.
 - **Lỗi trượt phím** có Cor R thấp nhất trong các nhóm lớn (0,844): phép thay một chữ bằng phím lân cận thường tạo ra chuỗi cách âm tiết đúng một bước soạn thảo, và có nhiều âm tiết khác cùng khoảng cách, nên LM phải chọn giữa nhiều ứng viên cạnh tranh.
 - **Teencode** có khoảng cách lớn giữa phát hiện và sửa (0,955 so với 0,694): mô hình nhận ra âm tiết lạ nhưng các dạng như *“k”*, *“a”*, *“e”* ứng với nhiều từ gốc, hoặc dạng teencode thay phụ âm đầu (*f, j, w, z*) không có trong bảng đảo ngược.
 - Hai loại teencode và viết tắt có số mẫu nhỏ (111 và 26), nên các con số này có độ bất định cao.
+- **Mô hình C v3** vượt A ở trượt phím (0,945 so với 0,844), vùng miền (0,955 so với 0,902) và đặc biệt teencode (0,919 so với 0,694): mô hình sinh học được ánh xạ teencode → từ gốc theo ngữ cảnh thay vì tra bảng. A chỉ hơn ở Telex, nơi bộ giải mã Telex cho đúng một ứng viên. C v4 thấp hơn v3 ở hầu hết các loại vì dữ liệu train của nó dành phần lớn cho lỗi dấu, không theo phân bố của Syn-test.
 
-[chờ hình: `outputs/figures/` – biểu đồ recall theo loại lỗi, do task S5a tạo]
+![Hình 5.2. Recall sửa lỗi theo loại lỗi trên Syn-test](../outputs/figures/recall_by_error_type.png)
 
 ## 5.3. Ablation A: bậc n-gram và phương pháp làm trơn
 
@@ -461,7 +476,9 @@ Một số nhận xét:
 - **Perplexity tương quan với chất lượng sửa lỗi trong cùng họ làm trơn** (Kneser-Ney: 94,74 → 45,89 → 39,68 tương ứng Correction F1 VSEC 0,724 → 0,778 → 0,783), cho thấy perplexity là chỉ báo hữu ích khi chọn LM cho bài toán này.
 - Nhóm giữ **bậc 3 Kneser-Ney** làm mô hình chính vì chênh lệch với bậc 4 nhỏ, trong khi bậc 3 có tỉ lệ sửa quá tay thấp hơn trên VSEC và số n-gram cần lưu ít hơn.
 
-[chờ hình: `outputs/figures/` – biểu đồ ablation (bậc × làm trơn; perplexity so với Correction F1), do task S5a tạo]
+![Hình 5.3. Correction F1 theo bậc n-gram và phương pháp làm trơn](../outputs/figures/ablation_order_smoothing_f1.png)
+
+![Hình 5.4. Perplexity so với Correction F1](../outputs/figures/ablation_perplexity_vs_f1.png)
 
 ## 5.4. Chỉnh tham số giải mã
 
@@ -520,13 +537,94 @@ Một số nhận xét:
 - **Các luật bổ trợ nhau.** Bật riêng từng luật chỉ đưa F1 trên Viwiki lên tối đa 0,364, còn bật cả bốn lên 0,453, lớn hơn tổng các mức tăng riêng lẻ. Mỗi luật loại một nhóm sửa nhầm khác nhau; khi các nhóm này bị loại cùng lúc, những lần sửa còn lại tập trung vào lỗi thật. Riêng `ignore_iy` gần như không đổi F1 vì nhóm i/y chỉ chiếm khoảng 2% số lần sửa quá tay trên Viwiki.
 - So với mô hình C (BARTpho v4, Viwiki Cor F1 0,322), mô hình A + S4 cao hơn khoảng 0,13 trên Viwiki và cao hơn 0,035 trên VSEC-test (0,784 so với 0,749).
 
-## 5.6. Phân tích lỗi
+## 5.6. Mô hình C: nguyên nhân thua trên lỗi thật và ablation
 
-[chờ BARTpho] – 5–10 ví dụ có phân tích (A đúng/C sai, C đúng/A sai, cả hai sai) sẽ được chọn ở task S5b từ `outputs/tables/error_examples.md`.
+**Bài học về tiền xử lý.** Vocab của BARTpho chỉ có kiểu đặt dấu mới (*hoà, thoả, tuỳ*). Bản C đầu tiên (v2) đưa âm tiết kiểu cũ (*hòa, thỏa*) vào tokenizer, nên chúng thành `<unk>` và mô hình học cách xóa chúng: tỉ lệ sửa quá tay trên VSEC lên tới 0,523. Đổi sang kiểu dấu mới trước khi tokenize (`to_bartpho_style`) đưa tỉ lệ này về 0,026 ở C v3. Đây là lỗi tiền xử lý, không phải giới hạn của mô hình.
+
+**Lệch phân bố loại lỗi.** Bảng 5.7 suy kiểu lỗi từ cặp (âm tiết sai, âm tiết đúng) (`real_error_kinds.csv`, `ab_recall_by_kind.csv`).
+
+**Bảng 5.7.** Phân bố kiểu lỗi và recall sửa lỗi theo kiểu lỗi trên VSEC-test.
+
+| Kiểu lỗi | Syn-train | VSEC-test | Số lỗi VSEC | A | C v3 | C v4 |
+|---|---:|---:|---:|---:|---:|---:|
+| Chỉ sai dấu thanh | 6,6% | **49,6%** | 4.286 | **0,875** | 0,330 | 0,718 |
+| Sai dấu phụ (ă â ê ô ơ ư đ) | 0,4% | 12,0% | 1.036 | **0,897** | 0,491 | 0,764 |
+| Sai 1 chữ cái | **83,8%** | 25,6% | 2.201 | **0,745** | 0,541 | 0,595 |
+| Sai ≥ 2 ký tự | 9,3% | 4,5% | 372 | 0,229 | 0,433 | **0,551** |
+| Tách/ghép âm tiết | 0,0% | 8,3% | 407 | 0,000 | 0,091 | **0,268** |
+
+- Bộ sinh nhiễu chủ yếu tạo lỗi sai một chữ cái, trong khi một nửa lỗi thật là sai dấu thanh. C chỉ học những phép sửa đã thấy nhiều khi huấn luyện, nên hiếm khi dám đổi dấu: recall thấp, precision cao.
+- A không phụ thuộc vào phân bố nhiễu: tập ứng viên của nó luôn chứa mọi biến thể dấu của âm tiết, và việc chọn do LM học trên văn bản sạch quyết định.
+- C mạnh hơn A ở lỗi sai nhiều ký tự (*phpasp* → *pháp*) và một phần lỗi tách/ghép, hai loại A không xử lý được vì giới hạn khoảng cách sửa ≤ 2 và ánh xạ 1–1.
+- Phần lớn lỗi thật **tạo ra từ có thật** (âm tiết sai vẫn nằm trong từ điển): 80% trên VSEC và 76% trên Viwiki. Với nhóm này, C v3 chỉ sửa được 0,329 trên VSEC so với 0,776 của A (`ab_recall_word_kind.png`); phần lớn chúng chính là lỗi sai dấu thanh.
+
+**Bảng 5.8.** Ablation C trên VSEC-test (`ablation_noise_density.csv`, `main_results.csv`).
+
+| Cấu hình | Cor P | Cor R | Cor F1 | OC |
+|---|---:|---:|---:|---:|
+| 5% nhiễu · 50k cặp · 1 epoch (`d05`) | 0,884 | 0,422 | 0,571 | 0,024 |
+| 12% · 50k · 1 epoch (`d12`) | 0,882 | 0,480 | 0,622 | 0,028 |
+| 25% · 50k · 1 epoch (`d25`) | 0,895 | 0,479 | 0,624 | 0,045 |
+| 5% · 150k · 3 epoch (C v3, mô hình chính) | 0,888 | 0,384 | 0,536 | 0,026 |
+| 12% · 50k · 1 epoch, nhiễu dấu (C v4) | **0,910** | **0,636** | **0,749** | 0,026 |
+
+- **Mật độ nhiễu:** tăng từ 5% lên 12% làm recall tăng 6 điểm, precision gần như không đổi; lên 25% thì F1 không tăng thêm còn tỉ lệ sửa quá tay gần gấp đôi. Mức 12% là điểm cân bằng hợp lý. Mô hình chính được sinh với mật độ 5% (`syn_train.stats.json`), nên mốc so sánh đúng cho nó là dòng `d05`.
+- **Quy mô huấn luyện** (cùng mật độ 5%): C v3 được train nhiều hơn khoảng 9 lần nhưng **kém hơn** `d05` trên VSEC (0,536 so với 0,571). Hai cấu hình khác nhau đồng thời ở số cặp, số epoch và bước chọn checkpoint, nên đây mới là kết quả quan sát. Giả thuyết "train càng lâu trên nhiễu tổng hợp càng khớp với phân bố nhiễu đó" chưa được kiểm chứng; muốn kiểm chứng cần so các checkpoint theo từng epoch trên VSEC-dev.
+- **Loại lỗi sinh nhiễu (v4):** hai luật mới `tone_error` (đổi/bỏ dấu thanh) và `diacritic_error` (đổi a/ă/â, o/ô/ơ, u/ư, d/đ) cùng `configs/noise_v4.yaml` (dấu thanh 40%, dấu phụ 12%) đưa phân bố dữ liệu train về gần VSEC (sai dấu thanh 47%, dấu phụ 13%). So với `d12`, chỉ khác loại lỗi, F1 trên VSEC tăng 12,7 điểm (0,622 → 0,749), recall lỗi sai dấu thanh tăng từ 0,47 lên 0,72, precision và tỉ lệ sửa quá tay không xấu đi. Trên Viwiki, v4 đạt 0,322, lần đầu C vượt A ban đầu (0,304) trên một tập lỗi thật. Đổi lại, F1 trên Syn-test giảm từ 0,959 (v3) xuống 0,912: mô hình khớp theo phân bố nhiễu mà nó được train.
+
+![Hình 5.5. Ablation mật độ nhiễu của mô hình C trên VSEC-test](../outputs/figures/ablation_noise_density.png)
+
+## 5.7. Phân tích lỗi
+
+Các ví dụ dưới đây so sánh A với C v3, chọn từ `outputs/tables/error_examples.md`; mỗi ví dụ ghi id câu để tra trong `outputs/predictions/`. In **đậm** là vị trí lỗi hoặc vị trí bị sửa. Hình 5.6 tổng hợp cơ cấu kết quả theo vị trí (sửa đúng, sửa sai, bỏ sót, sửa quá tay) và nhóm token bị sửa quá tay.
+
+![Hình 5.6. Cơ cấu kết quả theo vị trí và các nhóm sửa quá tay](../outputs/figures/error_breakdown.png)
+
+**Ví dụ 1. A đúng, C sai: lỗi tạo ra từ có thật (Viwiki) [`viwiki-6810-542`].** src: *Không những Voltaire, tác **gia** Thụy Điển là Frans G. Bengtsson…* A sửa thành *tác **giả***; C giữ nguyên. "gia" là âm tiết hợp lệ; A nhận ra nhờ trigram "tác giả Thụy" có xác suất cao hơn hẳn, còn C coi "tác gia" là cụm hợp lệ (cũng là một từ Hán Việt hiếm).
+
+**Ví dụ 2. A đúng, C sai: chỉ sai dấu thanh (VSEC) [`vsec-404`].** src: *công sức **đòng** góp của vợ, chồng.* A: ***đóng** góp*; C v3 giữ nguyên. Đây là kiểu lỗi chiếm một nửa VSEC: A thử mọi dấu thanh của "đong" và chọn theo LM, còn C v3 hiếm khi thấy kiểu sửa này khi train. C v4 sửa đúng.
+
+**Ví dụ 3. A đúng, C sai: sai dấu thanh ngay trên Syn-test [`syn_test-4838`].** src: ***Buỗi** chiều, các đại biểu sẽ thảo luận theo tổ.* A: ***Buổi***; C giữ nguyên dù "Buỗi" không phải âm tiết hợp lệ, vì lỗi dấu thanh chỉ chiếm 6,6% dữ liệu train.
+
+**Ví dụ 4. C đúng, A sai: tên riêng bị gõ sai (Syn) [`syn_test-3260`].** src: *ông Đinh Văn **Fhu** **lpà** Đinh Văn Vũ.* A chỉ sửa `lpà` → `là` vì tránh sửa từ viết hoa giữa câu (coi là tên riêng); C sửa cả `Fhu` → ***Thu*** nhờ ngữ cảnh "Đinh Văn ___".
+
+**Ví dụ 5. C đúng, A sai: sai nhiều ký tự (VSEC) [`vsec-8988`].** src: *thực hiện biện **phpasp** này.* A giữ nguyên vì khoảng cách sửa từ "phpasp" đến "pháp" lớn hơn 2 (gõ lặp Telex) nên không có ứng viên đúng; C sinh lại cả chuỗi thành ***pháp***.
+
+**Ví dụ 6. C đúng, A sai: cần hiểu cụm từ (Viwiki) [`viwiki-1022-1`].** src: *và **cơ** **ngợi** những chiến thắng.* Gold chỉ sửa "cơ" → "ca". A sửa `ngợi` → `ngơi` thành "cơ ngơi", đúng ngữ pháp nhưng sai nghĩa, vì "cơ ngơi" là cụm phổ biến trong LM; C sửa đúng thành ***ca** ngợi*.
+
+**Ví dụ 7. Cả hai sai: lỗi tách âm tiết (VSEC) [`vsec-8083`].** src: *Từ **b ài** toán, Giáo viên yêu cầu học sinh khái quát…* Gold: *Từ **bài** toán.* A giữ ánh xạ 1–1 nên không ghép được, chỉ chọn được hai âm tiết riêng lẻ (`bỏ tài`) và còn sửa quá tay `khái` → `khối`. C có thể ghép nhưng không sửa gì, vì tách/ghép chiếm 0% Syn-train.
+
+**Ví dụ 8. Cả hai sai: lỗi dấu tạo ra từ có thật ở đầu câu (Viwiki) [`viwiki-6988-72`].** src: ***Dùng** lại nitrôglyxêrin các triệu chứng có thể dừng.* Gold: ***dừng** lại.* Cả hai giữ nguyên vì "Dùng lại" là cụm hợp lệ và phổ biến; muốn sửa phải hiểu nghĩa cả câu. Gold còn đổi chữ hoa đầu câu thành chữ thường, cho thấy nhãn Viwiki có độ nhiễu nhất định.
+
+**Ví dụ 9. Cả hai sai: cần kiến thức thế giới (Syn) [`syn_test-1468`].** src: *hoa đào, hoa **hai**, bánh chưng…* Gold: *hoa **mai***. A sửa thành "hồi" (hoa hồi, đúng ngữ pháp), C giữ nguyên. Muốn sửa cần biết cặp "hoa đào, hoa mai" ngày Tết, điều mà trigram và mô hình fine-tune trên tin tức đều không nắm được.
 
 # 6. Kết luận
 
-[chờ BARTpho] – sẽ viết ở task S7b: tóm tắt câu trả lời cho CH1, CH2; các hạn chế (đã nêu ở mục 2.6 và 3.2.7); hướng phát triển (mô hình B BiLSTM, xử lý lỗi tách/ghép âm tiết, chuẩn hóa teencode với ViLexNorm, giảm sửa quá tay trên văn bản khác miền).
+**Trả lời CH1 (so sánh A và C).**
+
+- Trên dữ liệu cùng phân bố với lúc huấn luyện (Syn-test), C v3 tốt hơn A cả về Correction F1 (0,959 so với 0,898) lẫn độ an toàn (sửa quá tay 0,020 so với 0,127), và vượt A ở hầu hết các loại lỗi tổng hợp, rõ nhất ở teencode.
+- Trên lỗi thật, A tốt hơn C v3: 0,778 so với 0,536 trên VSEC-test và 0,304 so với 0,240 trên Viwiki-test. C v3 có precision cao nhưng recall thấp; A sửa được gần như mọi lỗi mà C v3 sửa được.
+- Hai mô hình bổ sung cho nhau: A mạnh ở lỗi dấu thanh, dấu phụ và lỗi tạo ra từ có thật nhờ tập ứng viên đầy đủ và LM học trên văn bản sạch; C mạnh ở lỗi sai nhiều ký tự, tên riêng và lỗi cần ngữ cảnh rộng, và là mô hình duy nhất có thể sửa một phần lỗi tách/ghép âm tiết.
+- Về sửa quá tay, C luôn thận trọng hơn A ban đầu. Bốn luật S4 đưa tỉ lệ sửa quá tay của A trên Viwiki từ 0,128 xuống 0,041 và Correction F1 lên 0,453, cao nhất trong các mô hình trên tập này.
+
+**Trả lời CH2 (từ lỗi tổng hợp sang lỗi thật).**
+
+- Cả hai mô hình đều giảm mạnh khi chuyển sang lỗi thật, và giảm thêm khi sang miền khác với lỗi thưa. A giảm 0,12 rồi thêm 0,47; C v3 giảm 0,42 rồi thêm 0,30.
+- Mức giảm của C chủ yếu do **lệch phân bố loại lỗi** giữa nhiễu tổng hợp và lỗi thật, không phải do kiến trúc: chỉ đổi loại lỗi khi sinh nhiễu (v4) đã nâng Correction F1 trên VSEC-test từ 0,622 lên 0,749 với cùng lượng dữ liệu. Kết quả trên Syn-test vì vậy không đủ để chọn mô hình hay checkpoint cho văn bản thật.
+- Trên Viwiki (Wikipedia, mật độ lỗi 0,29%), khó khăn chính là sửa quá tay trên tên riêng, từ nước ngoài và từ thông thường mà LM tin tức đánh giá thấp. Không mô hình nào vượt được độ chính xác câu của mô hình đồng nhất (0,916) trên tập này.
+
+**Hạn chế.**
+
+- Các cải tiến S4 và v4 được thiết kế sau khi phân tích lỗi trên tập kiểm tra (mục 5.5), nên kết quả của chúng trên VSEC-test và Viwiki-test có thể lạc quan hơn thực tế; nhóm chưa có tập lỗi thật thứ ba để kiểm chứng.
+- Mô hình A chỉ sửa thay thế 1–1 với khoảng cách sửa ≤ 2, nên không xử lý được lỗi tách/ghép và lỗi sai nhiều ký tự (mục 2.6 và 3.2.7).
+- Kết luận về quy mô huấn luyện của C chưa tách được tác động của số cặp, số epoch và cách chọn checkpoint; C v4 mới được train với 50.000 cặp × 1 epoch.
+- Tham số giải mã chính của A chưa được chỉnh lại sau khi VSEC-dev được gom nhóm theo câu đích (mục 4.4).
+
+**Hướng phát triển.**
+
+- Huấn luyện C v4 với nhiều dữ liệu hơn và chọn checkpoint theo VSEC-dev thay vì Syn-val; bổ sung lỗi tách/ghép âm tiết vào bộ sinh nhiễu; trộn một phần dữ liệu lỗi thật vào tập train.
+- Kết hợp A và C, ví dụ dùng A sinh ứng viên rồi C xếp hạng, hoặc ensemble: trên VSEC có 760 vị trí chỉ C v4 sửa đúng và 1.665 vị trí chỉ A sửa đúng.
+- Mô hình B (BiLSTM gắn nhãn chuỗi), chuẩn hóa teencode với ViLexNorm, và giảm sửa quá tay trên văn bản khác miền bằng LM có thêm dữ liệu Wikipedia.
 
 # Phân công công việc
 
@@ -568,15 +666,15 @@ Theo yêu cầu của môn học, nhóm công khai việc sử dụng công cụ
 |---|---|---|
 | Lập kế hoạch | Đề xuất cấu trúc thư mục, phân chia task, dàn ý báo cáo | Chọn phạm vi (A + C), dữ liệu, phân công; duyệt kế hoạch |
 | Mã nguồn dữ liệu, sinh lỗi, đánh giá, mô hình A | Viết mã và test đơn vị theo đặc tả của nhóm; chạy thử, sửa lỗi | Đặc tả yêu cầu, rà soát mã, quyết định thiết kế (chuẩn hóa dấu, chia theo đoạn, bỏ KenLM, tham số) |
-| Mô hình C | Viết mã huấn luyện/dự đoán và notebook | Chạy huấn luyện trên GPU, kiểm tra kết quả [chờ BARTpho] |
-| Báo cáo | Soạn bản nháp các mục 1–4 và phần kết quả mô hình A từ mã nguồn và các tệp số liệu | Rà soát nội dung, kiểm tra số liệu, chỉnh sửa văn phong, viết các phần còn lại |
+| Mô hình C | Viết mã huấn luyện/dự đoán và notebook | Chạy huấn luyện trên GPU, kiểm tra kết quả |
+| Báo cáo | Soạn bản nháp các mục 1–6 từ mã nguồn và các tệp số liệu | Rà soát nội dung, kiểm tra số liệu, chỉnh sửa văn phong, viết các phần còn lại |
 | Tra cứu tài liệu | Tra thông tin thư mục (tên bài, tác giả) của tài liệu tham khảo | Kiểm tra lại trích dẫn |
 
 **Nguyên tắc nhóm áp dụng:**
 
-- Mọi số liệu trong báo cáo được lấy từ các tệp do mã nguồn sinh ra (`outputs/tables/*.csv`, `data/processed/stats_*.json`, `syn_*.stats.json`) hoặc từ tệp cấu hình; không có số liệu nào do AI tự đặt ra. Các chỗ chưa có số liệu được đánh dấu rõ ([chờ BARTpho], [chờ hình], [cần bổ sung]).
+- Mọi số liệu trong báo cáo được lấy từ các tệp do mã nguồn sinh ra (`outputs/tables/*.csv`, `data/processed/stats_*.json`, `syn_*.stats.json`) hoặc từ tệp cấu hình; không có số liệu nào do AI tự đặt ra. Các chỗ chưa có số liệu được đánh dấu rõ ([cần bổ sung]).
 - Các tập kiểm tra (VSEC-test, Viwiki-test) không được dùng để chỉnh tham số, kể cả khi AI hỗ trợ phân tích kết quả.
-- Mã do AI viết đều kèm test đơn vị (109 test) và được nhóm chạy lại; nhóm chịu trách nhiệm toàn bộ về nội dung và kết quả của bài tập lớn.
+- Mã do AI viết đều kèm test đơn vị (110 test) và được nhóm chạy lại; nhóm chịu trách nhiệm toàn bộ về nội dung và kết quả của bài tập lớn.
 
 # Phụ lục B. Cấu hình chính
 
