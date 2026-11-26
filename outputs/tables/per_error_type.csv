@@ -53,3 +53,9 @@ ngram_o4_kneser_ney,syn_test,fat_finger,4165,0.8975,0.8444
 ngram_o4_kneser_ney,syn_test,region,3058,0.9444,0.9035
 ngram_o4_kneser_ney,syn_test,teencode,111,0.964,0.7027
 ngram_o4_kneser_ney,syn_test,telex,3371,1.0,0.9961
+ngram_s4,syn_test,acronym,26,1.0,0.9615
+ngram_s4,syn_test,edit_distance,441,0.7664,0.712
+ngram_s4,syn_test,fat_finger,4165,0.6288,0.5875
+ngram_s4,syn_test,region,3058,0.9058,0.8784
+ngram_s4,syn_test,teencode,111,0.8198,0.6486
+ngram_s4,syn_test,telex,3371,0.9973,0.9958

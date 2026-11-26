@@ -66,3 +66,27 @@ def test_corrector_fixes_and_keeps():
     assert corr.correct_one(clean) == clean
     # Tên riêng/từ nước ngoài viết hoa không bị sửa
     assert "Michael" in corr.correct_one("Michael được hỗ trợ trong mùa dịch.")
+
+
+def test_iy_variant():
+    from vspell.models.ngram_corrector import is_iy_variant
+    for a, b in [("lí", "lý"), ("kì", "kỳ"), ("kĩ", "kỹ"), ("quí", "quý"), ("Mĩ", "Mỹ")]:
+        assert is_iy_variant(a, b)
+    for a, b in [("tai", "tay"), ("í", "ý"), ("lí", "lỳ"), ("lí", "lí"), ("mi", "mai")]:
+        assert not is_iy_variant(a, b)
+
+
+def test_s4_rules_off_by_default_and_reduce_edits():
+    lm, lex = train(CORPUS + ["Kỷ lục mới được lập ở thành phố."] * 5, CFG)
+    base = NgramCorrector(lm, lex, CFG)
+    s4cfg = {**CFG, "decoding": {**CFG["decoding"], "ignore_iy": True, "keep_non_vietnamese": True,
+                                 "capital_penalty": -3.0, "edit_margin": -1.0}}
+    s4 = NgramCorrector(lm, lex, s4cfg)
+    # Lỗi thật vẫn được sửa
+    assert s4.correct_one("Giá vànv hôm nay tăng mạnh.") == "Giá vàng hôm nay tăng mạnh."
+    # i/y: mô hình cũ có ứng viên "kỷ" cho "Kỉ", luật mới thì không
+    assert "kỷ" in [c for c, _ in base._options("Kỉ", True)]
+    assert "kỷ" not in [c for c, _ in s4._options("Kỉ", True)]
+    # Từ không dấu, sai cấu trúc âm tiết TV ("vàngs" kiểu Telex vẫn sửa được): "vanga" không bị sửa thành "vàng"
+    assert "vàng" not in [c for c, _ in s4._options("vanga", False)]
+    assert base.edit_margin == 0.0 and not base.ignore_iy

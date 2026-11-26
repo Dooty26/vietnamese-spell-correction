@@ -23,6 +23,13 @@ decoding:
   oov_penalty: -0.5          # giữ nguyên âm tiết ngoài từ điển (đã chỉnh trên VSEC-dev với o3_kneser_ney)
   real_word_penalty: -1.5    # thay âm tiết có trong từ điển (đã chỉnh trên VSEC-dev với o3_kneser_ney)
   real_word_sources: [telex, skeleton, confusion, teencode, edit1]
+  # S4: luật giảm sửa quá tay. Mặc định TẮT (= mô hình A ban đầu, giữ nguyên bảng ablation).
+  # scripts/tune_ngram_s4.py dò trên toàn bộ VSEC-dev theo Cor F0.5 và ghi checkpoint o3_kneser_ney_s4 với:
+  #   ignore_iy: true, keep_non_vietnamese: true, capital_penalty: -2.0, edit_margin: -0.5
+  ignore_iy: false            # không đổi biến thể i/y (lí/lý, kì/kỳ)
+  keep_non_vietnamese: false  # từ không dấu, sai cấu trúc âm tiết TV (manga): chỉ sửa bằng telex/skeleton/teencode
+  capital_penalty: 0.0        # phạt thêm khi sửa từ viết hoa giữa câu (tên riêng)
+  edit_margin: 0.0            # ngưỡng tin cậy: mỗi lần sửa phải hơn giữ nguyên |δ| (log10)
 
 tuning:                      # lưới tìm trên VSEC-dev (scripts/train_ngram.py --tune)
   n_sentences: 400

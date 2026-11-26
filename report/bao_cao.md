@@ -375,12 +375,14 @@ Các chỉ số được tính ở mức vi mô (micro) trên toàn tập. Mọi
 ## 4.4. Quy trình chọn tham số
 
 - **Mô hình A:** cấu trúc mô hình (bậc 3, Kneser-Ney, $D = 0{,}75$, beam 5, chi phí các nguồn ứng viên) được đặt theo kinh nghiệm. Hai tham số ảnh hưởng mạnh nhất đến cân bằng precision/recall là `oov_penalty` và `real_word_penalty` được chỉnh bằng tìm kiếm lưới trên 400 câu đầu của VSEC-dev (`scripts/train_ngram.py --tune`), chọn cặp có Correction F1 cao nhất. Lưới cuối cùng trong `configs/ngram.yaml` là `oov_penalty` ∈ {−0,5; −1,0; −1,5; −3,0} × `real_word_penalty` ∈ {−0,5; −1,0; −1,5; −2,0; −3,0}; giá trị được chọn là (−0,5; −1,5). Các mô hình trong ablation dùng chung tham số giải mã này, không chỉnh lại riêng.
+- **Mô hình A + S4 (luật giảm sửa quá tay, mục 5.5):** bốn tham số của các luật được dò bằng lưới 2 × 2 × 4 × 5 = 80 cấu hình trên **toàn bộ 1.868 câu VSEC-dev** (`scripts/tune_ngram_s4.py`), giữ nguyên các tham số giải mã khác. Tiêu chí chọn là Correction F0.5 (trọng số precision gấp đôi recall) thay vì F1: trên văn bản thật, phần lớn câu không có lỗi nên một lần sửa nhầm gây hại nhiều hơn một lỗi bị bỏ sót. Đây là lựa chọn phương pháp đặt ra trước khi xem kết quả trên tập kiểm tra.
 - **Mô hình C:** chọn checkpoint theo `eval_loss` trên Syn-val; không dùng VSEC-dev hay các tập lỗi thật để huấn luyện. [chờ BARTpho]
 - **Viwiki-test** không được dùng cho bất kỳ quyết định nào; **VSEC-test** chỉ dùng để báo cáo.
 
 ## 4.5. Thí nghiệm ablation
 
 - **Ablation A – bậc n-gram và phương pháp làm trơn:** huấn luyện năm LM trên cùng LM-corpus 400.000 câu: bậc 2 Laplace, bậc 2 Kneser-Ney, bậc 3 Laplace, bậc 3 Kneser-Ney (mô hình chính), bậc 4 Kneser-Ney. Mỗi LM được đánh giá bằng perplexity trên 5.000 câu sạch của Syn-val và bằng các chỉ số sửa lỗi trên Syn-test và VSEC-test.
+- **Ablation A – các luật giảm sửa quá tay (S4):** bật lần lượt từng luật (với giá trị đã chọn) trên mô hình A ban đầu và so với khi bật cả bốn, trên VSEC-test và Viwiki-test (`scripts/ablate_ngram_s4.py`). Thí nghiệm này chỉ để báo cáo, không dùng để chọn tham số.
 - **Ablation C – mật độ nhiễu trong dữ liệu huấn luyện** (tùy chọn): 5%, 12%, 25%, mỗi mức 50.000 cặp. [chờ BARTpho]
 
 # 5. Kết quả và thảo luận
@@ -471,7 +473,48 @@ Bảng 5.4 trình bày kết quả tìm kiếm lưới được lưu trong `outp
 
 Xu hướng rõ ràng: hình phạt `real_word_penalty` càng âm thì mô hình càng ít thay âm tiết có thật – precision phát hiện tăng (ví dụ từ 0,857 lên 0,953 khi `real_word_penalty` đi từ −1,0 xuống −3,0 với `oov_penalty` = −1,5) nhưng recall giảm nhanh hơn (0,846 xuống 0,660), nên F1 giảm. Hình phạt `oov_penalty` ít ảnh hưởng hơn; giá trị ít âm hơn cho kết quả tốt hơn một chút. Theo xu hướng này, lưới được mở rộng về phía các giá trị ít âm hơn (lưới cuối ở mục 4.4) và cặp được chọn cho mô hình chính là `oov_penalty` = −0,5, `real_word_penalty` = −1,5. [cần bổ sung: kết quả của lưới cuối chưa được lưu vào CSV; chạy lại `python scripts/train_ngram.py --tune` để ghi đầy đủ và cập nhật Bảng 5.4]
 
-## 5.5. Phân tích lỗi
+## 5.5. Giảm sửa quá tay của mô hình A (S4)
+
+Phân tích lỗi của mô hình A trên Viwiki (`outputs/tables/overcorrection_viwiki.csv`) cho thấy các lần sửa quá tay rơi vào ba nhóm: từ thông thường bị thay bằng một âm tiết “phổ biến hơn” (khoảng 45%), từ ngoài từ điển như từ nước ngoài (*manga → mang*, khoảng 35%) và tên riêng viết hoa (khoảng 21%). Ngoài ra còn một nhóm nhỏ là đổi biến thể chính tả i/y (*lí → lý*, *kì → kỳ*, *Mĩ → Mỹ*) vốn không phải lỗi. Nhóm bổ sung bốn luật vào bước sinh lựa chọn của bộ giải mã (`NgramCorrector._options`), mỗi luật là một tham số trong `configs/ngram.yaml` và mặc định tắt để tái lập đúng mô hình A ban đầu:
+
+- `ignore_iy`: bỏ các ứng viên chỉ khác âm tiết gốc ở biến thể i/y (vần chỉ gồm một nguyên âm i/y, không âm cuối, cùng phụ âm đầu và thanh).
+- `keep_non_vietnamese`: với âm tiết **không có dấu**, ngoài từ điển và sai cấu trúc âm tiết tiếng Việt (*manga*, *online*), chỉ giữ ứng viên từ các nguồn mạnh (`telex`, `skeleton`, `teencode`). Âm tiết có dấu nhưng sai cấu trúc (*vànv*) vẫn được coi là lỗi gõ và sửa bình thường.
+- `capital_penalty`: cộng thêm một hình phạt khi sửa âm tiết viết hoa không đứng đầu câu, kể cả âm tiết có trong từ điển (trước đây chỉ âm tiết ngoài từ điển mới được bảo vệ).
+- `edit_margin` (ngưỡng tin cậy): cộng thêm một hình phạt cho **mọi** lựa chọn khác giữ nguyên, tức là một lần sửa chỉ được chấp nhận khi điểm của nó vượt điểm giữ nguyên ít nhất |δ| (log10).
+
+Cấu hình được chọn trên VSEC-dev theo Correction F0.5 (mục 4.4) là: bật `ignore_iy` và `keep_non_vietnamese`, `capital_penalty` = −2,0, `edit_margin` = −0,5. Trên VSEC-dev, Cor P tăng từ 0,821 lên 0,892 và Cor F1 tăng nhẹ từ 0,770 lên 0,774, số lần sửa giảm từ 1.951 xuống 1.692 (`outputs/tables/ngram_s4_tuning.csv`). Cấu hình tốt nhất theo F1 (`edit_margin` = −0,25) chỉ hơn cấu hình được chọn 0,003 F1 trên dev nhưng có precision thấp hơn 0,018.
+
+**Bảng 5.5.** Mô hình A trước và sau khi thêm luật S4 (`main_results.csv`, tag `ngram` và `ngram_s4`).
+
+| Tập | Mô hình | Cor P | Cor R | **Cor F1** | SA | OC | Số lần sửa |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Syn-test | A | 0,891 | 0,905 | **0,898** | 0,719 | 0,127 | 11.338 |
+| | A + S4 | 0,935 | 0,797 | 0,860 | 0,615 | 0,058 | 9.523 |
+| VSEC-test | A | 0,819 | 0,741 | 0,778 | 0,694 | 0,063 | 7.825 |
+| | A + S4 | 0,897 | 0,697 | **0,784** | 0,688 | 0,022 | 6.724 |
+| Viwiki-test | A | 0,221 | 0,487 | 0,304 | 0,835 | 0,128 | 3.404 |
+| | A + S4 | 0,461 | 0,445 | **0,453** | 0,915 | 0,041 | 1.486 |
+
+**Bảng 5.6.** Ablation từng luật: mô hình A ban đầu bật đúng một luật (`outputs/tables/ngram_s4_ablation.csv`).
+
+| Biến thể | VSEC Cor P | VSEC Cor F1 | Viwiki Cor P | Viwiki Cor R | Viwiki Cor F1 | Viwiki OC |
+|---|---:|---:|---:|---:|---:|---:|
+| A | 0,819 | 0,778 | 0,221 | 0,487 | 0,304 | 0,128 |
+| A + `ignore_iy` | 0,825 | 0,781 | 0,221 | 0,481 | 0,303 | 0,125 |
+| A + `keep_non_vietnamese` | 0,850 | 0,786 | 0,275 | 0,487 | 0,352 | 0,100 |
+| A + `capital_penalty` | 0,825 | 0,780 | 0,260 | 0,487 | 0,339 | 0,104 |
+| A + `edit_margin` | 0,862 | 0,779 | 0,303 | 0,451 | 0,363 | 0,078 |
+| A + cả bốn (A + S4) | 0,897 | 0,784 | 0,461 | 0,445 | **0,453** | 0,041 |
+
+Một số nhận xét:
+
+- **Trên Viwiki**, Correction F1 tăng từ 0,304 lên 0,453 (+0,149), chủ yếu nhờ precision tăng gấp đôi (0,221 lên 0,461) trong khi recall chỉ giảm 0,04. Số lần sửa giảm từ 3.404 xuống 1.486, xấp xỉ số lỗi thật (1.541), và tỉ lệ câu sạch bị sửa giảm từ 12,8% xuống 4,1%. Độ chính xác câu (0,915) gần bằng mô hình đồng nhất (0,917): mô hình gần như không còn làm hại câu đúng, nhưng vẫn chưa vượt được mốc “không sửa gì”.
+- **Trên VSEC-test**, F1 tăng nhẹ (0,778 lên 0,784): precision tăng bù cho recall giảm. Đây là tập có cùng miền với tập dùng để chỉnh, nên mức tăng nhỏ là hợp lý.
+- **Trên Syn-test**, F1 giảm từ 0,898 xuống 0,860, do recall giảm (0,905 xuống 0,797). Ngưỡng tin cậy chặn cả những lần sửa đúng mà LM chỉ hơi tin, và luật `keep_non_vietnamese` chặn các lỗi trượt phím trên âm tiết không dấu. Trên dữ liệu tổng hợp, mật độ lỗi cao và mọi lỗi đều thuộc các mẫu mà bộ sinh ứng viên biết, nên sự thận trọng này bị “phạt”. Kết quả này nhắc lại rằng tối ưu cho dữ liệu tổng hợp không đồng nghĩa với tối ưu cho văn bản thật.
+- **Các luật bổ trợ nhau.** Bật riêng từng luật chỉ đưa F1 trên Viwiki lên tối đa 0,363, còn bật cả bốn lên 0,453, lớn hơn tổng các mức tăng riêng lẻ. Mỗi luật loại một nhóm sửa nhầm khác nhau; khi các nhóm này bị loại cùng lúc, những lần sửa còn lại tập trung vào lỗi thật. Riêng `ignore_iy` gần như không đổi F1 vì nhóm i/y chỉ chiếm khoảng 2% số lần sửa quá tay trên Viwiki.
+- So với mô hình C (BARTpho v4, Viwiki Cor F1 0,322), mô hình A + S4 cao hơn khoảng 0,13 trên Viwiki và cao hơn 0,035 trên VSEC-test (0,784 so với 0,749).
+
+## 5.6. Phân tích lỗi
 
 [chờ BARTpho] – 5–10 ví dụ có phân tích (A đúng/C sai, C đúng/A sai, cả hai sai) sẽ được chọn ở task S5b từ `outputs/tables/error_examples.md`.
 

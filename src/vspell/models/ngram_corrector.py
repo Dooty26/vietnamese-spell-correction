@@ -28,6 +28,20 @@ DEFAULT_COSTS = {"telex": -0.5, "skeleton": -1.0, "confusion": -1.0, "teencode":
 STRONG_SOURCES = {"telex", "skeleton", "teencode"}
 
 
+def is_iy_variant(a: str, b: str) -> bool:
+    """Hai âm tiết chỉ khác nhau ở biến thể chính tả i/y (lí/lý, kì/kỳ, quí/quý, Mĩ/Mỹ): không coi là lỗi.
+
+    Chỉ áp dụng khi vần chỉ gồm một nguyên âm i/y, không âm cuối, có phụ âm đầu ("ý"/"í" là hai từ khác nhau).
+    """
+    if a == b:
+        return False
+    (ba, ta), (bb, tb) = split_tone(a.lower()), split_tone(b.lower())
+    pa, pb = parse_syllable(ba), parse_syllable(bb)
+    if pa is None or pb is None or ta != tb:
+        return False
+    return (pa[0] == pb[0] != "" and pa[2] == pb[2] == "" and {pa[1], pb[1]} <= {"i", "y"})
+
+
 def build_lexicon(sentences: list[str], min_count: int = 3) -> dict[str, int]:
     """Từ điển âm tiết hợp lệ (đã normalize, chữ thường) kèm tần suất."""
     freq: Counter = Counter()
@@ -171,6 +185,11 @@ class NgramCorrector:
         self.oov_penalty = dc.get("oov_penalty", -3.0)
         self.real_word_penalty = dc.get("real_word_penalty", -2.0)
         self.real_word_sources = set(dc.get("real_word_sources", ["telex", "skeleton", "confusion", "teencode", "edit1"]))
+        # S4: giảm sửa quá tay (mặc định tắt -> tái lập đúng mô hình A cũ)
+        self.ignore_iy = dc.get("ignore_iy", False)                      # không đổi i <-> y
+        self.keep_non_vietnamese = dc.get("keep_non_vietnamese", False)  # âm tiết sai cấu trúc TV: chỉ sửa bằng nguồn mạnh
+        self.capital_penalty = dc.get("capital_penalty", 0.0)            # phạt thêm khi sửa từ viết hoa giữa câu
+        self.edit_margin = dc.get("edit_margin", 0.0)                    # ngưỡng tin cậy: phạt thêm mỗi lần sửa
 
     # ------------------------------------------------------------------ lựa chọn cho từng token
     def _options(self, tok: str, is_first_word: bool) -> list[tuple[str, float]]:
@@ -181,15 +200,25 @@ class NgramCorrector:
             return keep  # số, dấu câu, viết tắt toàn hoa: không sửa
         cands = self.gen.candidates(low)
         in_lex = low in self.lexicon
-        if not in_lex and tok[0].isupper() and not is_first_word:
+        capital_mid = tok[0].isupper() and not is_first_word
+        if not in_lex and capital_mid:
             # Có thể là tên riêng/từ nước ngoài: chỉ sửa khi có bằng chứng mạnh
             cands = tuple(c for c in cands if c[1] in STRONG_SOURCES)
+        if (self.keep_non_vietnamese and not in_lex and remove_diacritics(low) == low
+                and not is_vietnamese_syllable(low)):
+            # "manga", "online": không dấu và không phải âm tiết TV -> có thể là từ nước ngoài;
+            # chỉ sửa khi là Telex/không dấu/teencode. ("vànv" có dấu -> vẫn là lỗi gõ, sửa bình thường)
+            cands = tuple(c for c in cands if c[1] in STRONG_SOURCES)
+        if self.ignore_iy:
+            cands = tuple(c for c in cands if not is_iy_variant(low, c[0]))
+        extra = self.edit_margin + (self.capital_penalty if capital_mid else 0.0)
         if in_lex:
-            opts = [(c, cost + self.real_word_penalty) for c, src, cost in cands if src in self.real_word_sources]
+            opts = [(c, cost + self.real_word_penalty + extra) for c, src, cost in cands
+                    if src in self.real_word_sources]
             return keep + opts
         if not cands:
             return keep
-        return [(low, self.oov_penalty)] + [(c, cost) for c, _, cost in cands]
+        return [(low, self.oov_penalty)] + [(c, cost + extra) for c, _, cost in cands]
 
     def correct_one(self, sentence: str) -> str:
         text = normalize(sentence)

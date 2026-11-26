@@ -35,9 +35,10 @@ Correction F1 mức âm tiết (`outputs/tables/main_results.csv`; phân tích: 
 
 | Mô hình | Syn-test | VSEC-test | Viwiki-test |
 |---|---|---|---|
-| A: n-gram 3-gram KN | 0,898 | **0,778** | 0,304 |
+| A: n-gram 3-gram KN | 0,898 | 0,778 | 0,304 |
+| A + S4 (luật giảm sửa quá tay, chỉnh trên VSEC-dev) | 0,860 | **0,784** | **0,453** |
 | C: BARTpho v3 (nhiễu gốc, 150k cặp × 3 epoch) | **0,959** | 0,536 | 0,240 |
-| C: BARTpho v4 (nhiễu giàu lỗi dấu, 50k cặp × 1 epoch) | 0,912 | 0,749 | **0,322** |
+| C: BARTpho v4 (nhiễu giàu lỗi dấu, 50k cặp × 1 epoch) | 0,912 | 0,749 | 0,322 |
 
 Ablation: A theo bậc n-gram × smoothing (`ngram_perplexity.csv`); C theo mật độ nhiễu 5/12/25% (`ablation_noise_density.csv`) và loại lỗi sinh nhiễu (v4 so với d12).
 
@@ -48,7 +49,7 @@ Thư mục Google Drive: **DRIVE_LINK**. Giải nén vào thư mục gốc dự 
 |---|---|---|
 | `bartpho_v4_best.zip` | BARTpho v4 (fp16, ~800 MB): mô hình C dùng cho demo | `outputs/checkpoints/bartpho_v4/best/` |
 | `bartpho_v3_best.zip` | BARTpho v3 (fp32, ~1,6 GB) | `outputs/checkpoints/bartpho/best/` |
-| `ngram_o3_kneser_ney.zip` | Mô hình A (LM 3-gram KN, từ điển âm tiết) | `outputs/checkpoints/ngram/o3_kneser_ney/` |
+| `ngram_o3_kneser_ney.zip` | Mô hình A (LM 3-gram KN, từ điển âm tiết) và bản A + S4 | `outputs/checkpoints/ngram/o3_kneser_ney/`, `.../o3_kneser_ney_s4/` |
 | `predictions.zip` | Dự đoán của mọi mô hình trên 3 tập test | `outputs/predictions/` |
 | `data_processed.zip` | Dữ liệu đã xử lý (VSEC, Viwiki, Syn, corpus LM) | `data/processed/` |
 
@@ -71,8 +72,10 @@ python scripts/gen_noise.py --input data/processed/clean_syn_train.txt --output 
 python scripts/gen_noise.py --input data/processed/clean_syn_val.txt   --output data/processed/syn_val.jsonl  --seed 43
 python scripts/gen_noise.py --input data/processed/clean_syn_test.txt  --output data/processed/syn_test.jsonl --seed 44
 python scripts/train_ngram.py --config configs/ngram.yaml
+python scripts/tune_ngram_s4.py --workers 4      # S4: luật giảm sửa quá tay -> outputs/checkpoints/ngram/o3_kneser_ney_s4
 python scripts/train_bartpho.py --config configs/bartpho.yaml
 python scripts/predict.py --model ngram   --data data/processed/vsec_test.jsonl
+python scripts/predict.py --model ngram --checkpoint outputs/checkpoints/ngram/o3_kneser_ney_s4 --tag ngram_s4 --data data/processed/vsec_test.jsonl
 python scripts/predict.py --model bartpho --checkpoint outputs/checkpoints/bartpho/best --data data/processed/vsec_test.jsonl
 python scripts/evaluate.py --pred-dir outputs/predictions --out outputs/tables/main_results.csv
 python scripts/analyze_errors.py --models ngram bartpho bartpho_v4 --steps eda,errors,results   # bảng + hình
@@ -100,7 +103,7 @@ python -X utf8 demo/app.py                    # A + C: tự nạp BARTpho v4 (ou
 python -X utf8 demo/app.py --no-bartpho       # chỉ mô hình A (n-gram), khởi động nhanh
 ```
 Mở http://127.0.0.1:7860. Các tham số:
-- `--ngram-dir`: mặc định `outputs/checkpoints/ngram/o3_kneser_ney`, thư mục chứa `lm.pkl`, `lexicon.json`, `config.json`;
+- `--ngram-dir`: mặc định `outputs/checkpoints/ngram/o3_kneser_ney_s4` (A + luật S4), nếu không có thì `outputs/checkpoints/ngram/o3_kneser_ney`; thư mục chứa `lm.pkl`, `lexicon.json`, `config.json`;
 - `--bartpho-checkpoint`: mặc định `outputs/checkpoints/bartpho_v4/best`, nếu không có thì `outputs/checkpoints/bartpho/best`;
 - `--port`, `--host`, `--share`.
 

@@ -23,7 +23,9 @@ from vspell.eval.align import edit_positions  # noqa: E402
 from vspell.models.ngram_lm import BOS, EOS, lm_token  # noqa: E402
 from vspell.normalize import _TOKEN_RE, normalize  # noqa: E402
 
-DEFAULT_NGRAM_DIR = str(ROOT / "outputs/checkpoints/ngram/o3_kneser_ney")
+# Ưu tiên A + luật giảm sửa quá tay (S4), không có thì mô hình A ban đầu.
+NGRAM_DIRS = [ROOT / "outputs/checkpoints/ngram/o3_kneser_ney_s4", ROOT / "outputs/checkpoints/ngram/o3_kneser_ney"]
+DEFAULT_NGRAM_DIR = str(next((d for d in NGRAM_DIRS if (d / "lm.pkl").exists()), NGRAM_DIRS[1]))
 # Ưu tiên v4 (nhiễu giàu lỗi dấu: tốt nhất trên lỗi thật), không có thì v3 (150k cặp × 3 epoch).
 BARTPHO_DIRS = [ROOT / "outputs/checkpoints/bartpho_v4/best", ROOT / "outputs/checkpoints/bartpho/best"]
 DEFAULT_BARTPHO_DIR = next((d for d in BARTPHO_DIRS if (d / "model.safetensors").exists()), BARTPHO_DIRS[0])

@@ -14,7 +14,8 @@
 | **Mô hình A** | Tự cài n-gram LM + noisy channel + beam search; đã chỉnh tham số trên VSEC-dev | `src/vspell/models/ngram_*.py` |
 | Kết quả A | Cor F1: Syn 0,90 · VSEC 0,78 · Viwiki 0,30 | `outputs/tables/main_results.csv` |
 | Ablation A | Bậc 2/3/4 × Laplace/KN; perplexity | `outputs/tables/ngram_perplexity.csv` |
-| Test | 75 test pass | `tests/` |
+| **S4: A + luật giảm sửa quá tay** | Viwiki Cor F1 0,304 → **0,453** (P 0,221 → 0,461), VSEC 0,778 → 0,784, Syn 0,898 → 0,860; chọn trên VSEC-dev theo F0.5 | `scripts/tune_ngram_s4.py`, `ablate_ngram_s4.py`, `ngram_s4_*.csv`, báo cáo mục 5.5 |
+| Test | 77 test pass | `tests/` |
 
 **Phát hiện mới (S5a):** sửa quá tay trên Viwiki chủ yếu do lỗi thật quá ít (0,29%): tỉ lệ sửa quá tay trên token sạch 0,48% (VSEC 0,33%), nhưng bằng 1,64× số lỗi thật. 45% là từ thường, 35% ngoài từ điển (manga→mang), 21% tên riêng. Nghi chuẩn hóa chưa gộp biến thể i/y (`kỉ→kỷ` 15 lần). *26/11 đã kiểm tra:* đúng là do A đổi i→y (lí→lý, kì→kỳ, kĩ→kỹ, kỉ→kỷ, Mĩ→Mỹ), chiếm 54/783 ca sửa quá tay của A trên VSEC và 51/2526 trên Viwiki; BARTpho gần như không mắc. Ảnh hưởng nhỏ (precision của A tăng khoảng 0,5 điểm nếu sửa).
 
@@ -30,7 +31,8 @@
 - [~] README tái lập: đã có các bước và mục demo; `requirements.txt` đã bỏ `kenlm`. Còn: rà lại từ đầu theo README trên clone sạch (S9)
 - [x] Git: đã push GitHub (Dooty26/vietnamese-spell-correction)
 - [ ] Slide và demo 10 phút
-- [ ] (Tùy chọn) Mô hình B (BiLSTM); giảm sửa quá tay của A trên Viwiki
+- [x] S4: giảm sửa quá tay của A trên Viwiki (26/11; checkpoint `outputs/checkpoints/ngram/o3_kneser_ney_s4`, demo mặc định dùng bản này)
+- [ ] (Tùy chọn) Mô hình B (BiLSTM)
 
 > **Cảnh báo thời gian:** theo kế hoạch 14 ngày tính từ 12/11, hạn chót rơi vào khoảng 26/11. Nếu hạn thật gần như vậy, chỉ làm **S0 → S1 → S2 → S5 → S6 → S7**. Bỏ S3 (ablation C) vì ablation A đã đủ yêu cầu "≥1 ablation". Bỏ cả S4 và S8.
 
@@ -109,7 +111,7 @@ Ký hiệu: 🤖 Claude làm được trên máy này · 🧑 cần người ch�
 
 ### Tùy chọn (chỉ khi dư thời gian)
 
-- **S4. Giảm sửa quá tay của A trên Viwiki** 🤖: ưu tiên giữ nguyên tên riêng, từ nước ngoài và từ viết hoa; thêm ngưỡng tin cậy. **Chỉ chỉnh trên VSEC-dev, không chỉnh trên Viwiki-test.**
+- **S4. Giảm sửa quá tay của A trên Viwiki** ✅ *(26/11: 4 luật ignore_iy, keep_non_vietnamese, capital_penalty, edit_margin; lưới 80 cấu hình trên toàn bộ VSEC-dev, 4 tiến trình, khoảng 11 phút; ablation từng luật trong Bảng 5.6)* 🤖: ưu tiên giữ nguyên tên riêng, từ nước ngoài và từ viết hoa; thêm ngưỡng tin cậy. **Chỉ chỉnh trên VSEC-dev, không chỉnh trên Viwiki-test.**
 - **S8. Mô hình B (BiLSTM với char-CNN, gắn nhãn chuỗi)** 🤖 viết code, 🧑 train GPU.
 
 ## 4. Thứ tự và phân công gợi ý
