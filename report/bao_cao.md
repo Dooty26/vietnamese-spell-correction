@@ -362,7 +362,7 @@ Thứ tự này cho phép trả lời CH2: khoảng cách giữa Syn-test và VS
 
 ### 4.3.1. Căn chỉnh
 
-Các câu nguồn $s$, câu đích $t$ và câu dự đoán $p$ đều được chuẩn hóa (mục 2.2.1) và tách token trước khi so. Vì câu đích (VSEC, Viwiki) và câu dự đoán (mô hình C) có thể khác số âm tiết so với câu nguồn, mọi thay đổi được quy về **vị trí âm tiết trong câu nguồn** bằng `difflib.SequenceMatcher` (`src/vspell/eval/align.py`):
+Các câu nguồn $s$, câu đích $t$ và câu dự đoán $p$ đều được chuẩn hóa (mục 2.2.1) và tách token trước khi so. Vì câu đích (VSEC, Viwiki) và câu dự đoán (mô hình C) có thể khác số âm tiết so với câu nguồn, mọi thay đổi được quy về **vị trí âm tiết trong câu nguồn** bằng căn chỉnh theo khoảng cách Levenshtein mức âm tiết (thay/chèn/xóa một âm tiết, chi phí 1; `src/vspell/eval/align.py`). Nhóm không dùng `difflib.SequenceMatcher` vì thuật toán này ưu tiên cụm trùng dài nhất nên có thể đếm thừa lỗi (ví dụ *“tôi học tôi học” → “tôi hỏi tôi học”* thành 3 thay đổi thay vì 1):
 
 - thay thế 1–1: *“đều” → “điều”* được ghi thành $\{i: \text{“điều”}\}$;
 - tách/ghép: *“nh iên” → “nhiên”* được ghi thành $\{i: \text{“nhiên”},\, i{+}1: \text{“”}\}$ (âm tiết cuối của khối gánh phần dư);
