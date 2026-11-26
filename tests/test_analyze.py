@@ -95,3 +95,13 @@ def test_breakdown_checks_predictions_against_gold(tmp_path):
     write(pred / "B__vsec_test.jsonl", full[::-1])
     rows, per_sent = ae.run_breakdown(pred, ["A", "B"], LEX, data)
     assert set(per_sent) == {("A", "vsec_test"), ("B", "vsec_test")}
+
+
+def test_missing_lexicon_is_rejected(tmp_path):
+    import pytest
+
+    with pytest.raises(FileNotFoundError, match="--lexicon"):
+        ae.load_lexicon(tmp_path / "lexicon.json")
+    # có từ điển thì "học" là từ thường, không phải "ngoài từ điển"
+    assert ("sua_qua_tay", "tu_thuong") in {(x["cat"], x["sub"]) for x in
+                                            ae.classify_sentence("tôi học", "tôi hỏi", "tôi học", {"tôi", "học"})}

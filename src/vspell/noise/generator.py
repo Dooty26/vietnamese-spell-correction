@@ -22,8 +22,18 @@ class NoiseGenerator:
         self.seed = seed
         self.rng = random.Random(seed)
         weights = config["error_type_weights"]
-        self.types = list(weights)
+        unknown = set(weights) - set(RULES)
+        if unknown:
+            raise ValueError(f"error_type_weights có loại lỗi không tồn tại: {sorted(unknown)}")
+        negative = {t: w for t, w in weights.items() if w < 0}
+        if negative:
+            raise ValueError(f"error_type_weights không được âm: {negative}")
+        # Trọng số 0 = tắt loại lỗi: bỏ hẳn khỏi danh sách bốc (random.choices lỗi khi tổng trọng số còn lại = 0).
+        # Các loại có trọng số dương giữ nguyên thứ tự nên dữ liệu sinh với cấu hình cũ không đổi.
+        self.types = [t for t in weights if weights[t] > 0]
         self.weights = [weights[t] for t in self.types]
+        if not self.types:
+            raise ValueError("error_type_weights phải có ít nhất một loại lỗi trọng số dương")
         self.rate = config["syllable_error_rate"]
         self.clean_ratio = config.get("clean_sentence_ratio", 0.0)
 

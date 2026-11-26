@@ -70,3 +70,33 @@ def test_tone_and_diacritic_rules():
         assert d and d != w and remove_diacritics(d) == remove_diacritics(w)
         assert split_tone(d)[1] == split_tone(w)[1]  # giữ dấu thanh
     assert tone_error("x", rng) is None
+
+
+def test_zero_weight_disables_rule():
+    cfg = {**CFG, "error_type_weights": {**CFG["error_type_weights"], "acronym": 0}}
+    gen = NoiseGenerator(cfg, seed=1)
+    types = set()
+    for _ in range(300):
+        _, errs = gen.corrupt("Học sinh đến trường.", force=True)
+        types |= {e["type"] for e in errs}
+    assert types and "acronym" not in types
+
+
+def test_zero_weight_keeps_output_of_other_rules():
+    # tắt một loại = bỏ nó khỏi danh sách; các loại còn lại bốc y như cấu hình không có loại đó
+    w = dict(CFG["error_type_weights"])
+    without = {k: v for k, v in w.items() if k != "acronym"}
+    a = NoiseGenerator({**CFG, "error_type_weights": {**w, "acronym": 0}}, seed=3)
+    b = NoiseGenerator({**CFG, "error_type_weights": without}, seed=3)
+    s = "Hôm nay trời đẹp, học sinh đến trường rất đông."
+    assert [a.corrupt(s, force=True) for _ in range(50)] == [b.corrupt(s, force=True) for _ in range(50)]
+
+
+def test_invalid_weights_rejected():
+    w = CFG["error_type_weights"]
+    with pytest.raises(ValueError, match="âm"):
+        NoiseGenerator({**CFG, "error_type_weights": {**w, "acronym": -1}})
+    with pytest.raises(ValueError, match="trọng số dương"):
+        NoiseGenerator({**CFG, "error_type_weights": {k: 0 for k in w}})
+    with pytest.raises(ValueError, match="không tồn tại"):
+        NoiseGenerator({**CFG, "error_type_weights": {**w, "khong_co": 1}})

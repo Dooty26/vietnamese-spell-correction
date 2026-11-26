@@ -111,9 +111,12 @@ def load_preds(pred_dir: Path, model: str, dataset: str) -> list[dict] | None:
 
 
 def load_lexicon(path: Path) -> set[str]:
+    """Từ điển âm tiết của A. Bắt buộc: thiếu nó thì mọi âm tiết bị xếp vào 'ngoai_tu_dien' (sai phân nhóm
+    sửa quá tay và nhóm lỗi tạo ra từ có thật), nên dừng thay vì chạy tiếp với tập rỗng."""
     if not path.exists():
-        log.warning("Không thấy từ điển %s: nhóm 'ngoài từ điển' sẽ rỗng", path)
-        return set()
+        raise FileNotFoundError(
+            f"Không thấy từ điển âm tiết {path}. Các bước errors/results cần nó để phân nhóm sửa quá tay; "
+            "tải checkpoint n-gram (outputs/checkpoints/ngram/o3_kneser_ney/) hoặc chỉ đường dẫn bằng --lexicon.")
     with open(path, encoding="utf-8") as f:
         return set(json.load(f))
 
