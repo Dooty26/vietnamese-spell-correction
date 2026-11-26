@@ -4,7 +4,7 @@ Bài tập lớn môn Xử lý ngôn ngữ tự nhiên. Kế hoạch chi tiết:
 
 ## Mục tiêu
 Nhập một câu tiếng Việt có thể chứa lỗi chính tả → chỉ ra âm tiết sai và đề xuất câu đã sửa. So sánh:
-- **A – N-gram LM** (KenLM Kneser-Ney + tập dễ nhầm + beam search): baseline thống kê
+- **A – N-gram LM** (LM 3-gram Kneser-Ney tự cài + noisy channel + beam search): baseline thống kê
 - **C – BARTpho-syllable** fine-tune seq2seq: mô hình học sâu
 - *(B – BiLSTM + char-CNN: tùy chọn)*
 
@@ -15,7 +15,7 @@ Nhập một câu tiếng Việt có thể chứa lỗi chính tả → chỉ ra
 | VSEC | [VSEC2021/VSEC](https://github.com/VSEC2021/VSEC) | Lỗi thật (tin tức): dev 20% / test 80% |
 | Viwiki-spelling | [heraclex12/Viwiki-spelling](https://github.com/heraclex12/Viwiki-spelling) (CC BY 4.0) | Lỗi thật (Wikipedia): chỉ test |
 
-Dữ liệu không được đưa lên repo; các script bên dưới tự tải và tái tạo.
+Dữ liệu không được đưa lên repo; các script bên dưới tự tải và tái tạo. Bản đã xử lý sẵn và các checkpoint có trên Google Drive (mục *Tải sẵn dữ liệu và checkpoint*).
 
 ## Cấu trúc thư mục
 ```
@@ -29,6 +29,30 @@ demo/         ứng dụng Gradio
 tests/        kiểm thử normalize, noise, metrics
 report/       kế hoạch, dàn ý báo cáo, hình
 ```
+
+## Kết quả chính
+Correction F1 mức âm tiết (`outputs/tables/main_results.csv`; phân tích: `report/phan_tich_A_vs_C.md`):
+
+| Mô hình | Syn-test | VSEC-test | Viwiki-test |
+|---|---|---|---|
+| A: n-gram 3-gram KN | 0,898 | **0,778** | 0,304 |
+| C: BARTpho v3 (nhiễu gốc, 150k cặp × 3 epoch) | **0,959** | 0,536 | 0,240 |
+| C: BARTpho v4 (nhiễu giàu lỗi dấu, 50k cặp × 1 epoch) | 0,912 | 0,749 | **0,322** |
+
+Ablation: A theo bậc n-gram × smoothing (`ngram_perplexity.csv`); C theo mật độ nhiễu 5/12/25% (`ablation_noise_density.csv`) và loại lỗi sinh nhiễu (v4 so với d12).
+
+## Tải sẵn dữ liệu và checkpoint
+Thư mục Google Drive: **DRIVE_LINK**. Giải nén vào thư mục gốc dự án (mỗi zip đã chứa đường dẫn đích):
+
+| File | Nội dung | Giải nén ra |
+|---|---|---|
+| `bartpho_v4_best.zip` | BARTpho v4 (fp16, ~800 MB): mô hình C dùng cho demo | `outputs/checkpoints/bartpho_v4/best/` |
+| `bartpho_v3_best.zip` | BARTpho v3 (fp32, ~1,6 GB) | `outputs/checkpoints/bartpho/best/` |
+| `ngram_o3_kneser_ney.zip` | Mô hình A (LM 3-gram KN, từ điển âm tiết) | `outputs/checkpoints/ngram/o3_kneser_ney/` |
+| `predictions.zip` | Dự đoán của mọi mô hình trên 3 tập test | `outputs/predictions/` |
+| `data_processed.zip` | Dữ liệu đã xử lý (VSEC, Viwiki, Syn, corpus LM) | `data/processed/` |
+
+Với dữ liệu và dự đoán này có thể chạy ngay `scripts/evaluate.py`, `scripts/analyze_errors.py` và demo mà không cần train lại.
 
 ## Cài đặt
 Python 3.12.
@@ -51,8 +75,10 @@ python scripts/train_bartpho.py --config configs/bartpho.yaml
 python scripts/predict.py --model ngram   --data data/processed/vsec_test.jsonl
 python scripts/predict.py --model bartpho --checkpoint outputs/checkpoints/bartpho/best --data data/processed/vsec_test.jsonl
 python scripts/evaluate.py --pred-dir outputs/predictions --out outputs/tables/main_results.csv
+python scripts/analyze_errors.py --models ngram bartpho bartpho_v4 --steps eda,errors,results   # bảng + hình
 python demo/app.py
 ```
+Trên Windows thêm `-X utf8` sau `python` (vd `python -X utf8 scripts/evaluate.py`).
 
 ## Ablation mật độ nhiễu
 Ba tập train 50k cặp từ cùng 50k câu đầu của `clean_syn_train.txt`, cùng seed 42, chỉ khác `--error-rate` (5% / 12% / 25% âm tiết hợp lệ bị lỗi). Thống kê: `outputs/tables/noise_density_stats.csv`.
@@ -60,6 +86,10 @@ Ba tập train 50k cặp từ cùng 50k câu đầu của `clean_syn_train.txt`,
 python scripts/gen_noise.py --input data/processed/clean_syn_train.txt --limit 50000 --error-rate 0.05 --seed 42 --output data/processed/syn_train_d05.jsonl
 python scripts/gen_noise.py --input data/processed/clean_syn_train.txt --limit 50000 --error-rate 0.12 --seed 42 --output data/processed/syn_train_d12.jsonl
 python scripts/gen_noise.py --input data/processed/clean_syn_train.txt --limit 50000 --error-rate 0.25 --seed 42 --output data/processed/syn_train_d25.jsonl
+```
+**v4 (loại lỗi sinh nhiễu):** cùng 50k câu, seed 42, mật độ 12% như d12, nhưng dùng `configs/noise_v4.yaml` (thêm luật `tone`/`diacritic`: 47% lỗi chỉ sai dấu thanh, 13% sai dấu phụ, gần phân bố VSEC). Train trên Colab bằng `notebooks/04_bartpho.ipynb` với `RUN_MAIN=False`, `RUN_ABLATION=True`, `ABLATION_TAGS=["v4"]`, `ABLATION_TEST=["syn_test","vsec_test","viwiki_test"]`.
+```bash
+python scripts/gen_noise.py --input data/processed/clean_syn_train.txt --config configs/noise_v4.yaml --limit 50000 --output data/processed/syn_train_v4.jsonl
 ```
 Lưu ý: `errors_per_word` trong `.stats.json` thấp hơn tham số (~0,83×) vì tham số chỉ áp lên âm tiết ứng viên (bỏ số, dấu câu, tên riêng viết hoa) và 15% câu được giữ sạch; trên âm tiết ứng viên của các câu bị nhiễu, tỉ lệ thực tế là 5,2% / 12,1% / 25,1%.
 
@@ -91,7 +121,7 @@ Chức năng:
 - thời gian xử lý của từng mô hình;
 - 10 câu ví dụ có sẵn:
   - 8 câu theo từng loại lỗi: Telex chưa chuyển, lỗi vùng miền (dấu hỏi/ngã, l/n), trượt phím, teencode, mất dấu, câu có tên riêng (không bị sửa), đoạn văn hai câu;
-  - 2 câu so sánh A và C: sai dấu thanh `đòng góp` (A sửa, C bỏ qua) và sai nhiều ký tự `biện phpasp` (C sửa, A không có ứng viên).
+  - 2 câu so sánh A và C: sai dấu thanh `đòng góp` (A và C v4 sửa được, C v3 bỏ qua) và sai nhiều ký tự `biện phpasp` (C sửa, A không có ứng viên).
 
 ## Đánh giá
 Detection P/R/F1 và Correction P/R/F1 mức âm tiết, sentence accuracy, tỉ lệ sửa quá tay. Chạy trên Syn-test, VSEC-test, Viwiki-test. Mọi kết quả cố định seed 42.

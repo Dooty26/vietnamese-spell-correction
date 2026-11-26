@@ -1,5 +1,5 @@
 # Python 3.12. Phiên bản ghim theo môi trường đã chạy dữ liệu + mô hình A (Windows, CPU).
-# Nhóm "học sâu" chạy trên Kaggle/Colab: ghim lại theo `pip freeze` sau lần train BARTpho đầu tiên (task S2).
+# Nhóm "học sâu": train trên Kaggle/Colab (notebook tự cài bản mới nhất); dưới đây là bản đã chạy demo/predict trên CPU.
 
 # Dữ liệu, mô hình A, đánh giá
 pyarrow==26.0.1
@@ -17,9 +17,9 @@ seaborn==0.13.2
 pytest==9.1.1
 
 # Học sâu (mô hình C) và demo
-torch>=2.2
-transformers>=4.41
-datasets>=2.19
-accelerate>=0.30
-sentencepiece
-gradio>=4.0
+torch>=2.2                # đã chạy: 2.15.0+cpu
+transformers>=4.56        # cần tham số dtype= khi from_pretrained; đã chạy: 5.24.1
+datasets>=2.19            # đã chạy: 5.2.0
+accelerate>=0.30          # đã chạy: 1.16.0
+sentencepiece>=0.2        # đã chạy: 0.2.3
+gradio>=4.0               # đã chạy: 6.32.0
