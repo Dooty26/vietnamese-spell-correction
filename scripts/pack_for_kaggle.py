@@ -1,7 +1,9 @@
 """Đóng gói data/processed/*.jsonl để upload lên Kaggle dataset: nén gzip, cắt thành phần < 9 MB.
 
 Tập train chỉ giữ id/src/tgt; tập val/test giữ nguyên (cần `errors` cho bảng theo loại lỗi).
-Notebook 04_bartpho tự ghép các phần `{tên}.partNN.jsonl.gz` về `data/processed/{tên}.jsonl`.
+Mỗi tập kèm manifest `{tên}.parts.json` (số phần, số dòng mỗi phần): scripts/unpack_parts.py (notebook
+04_bartpho) dùng nó để phát hiện phần bị thiếu (kể cả phần cuối) trước khi ghép về data/processed/{tên}.jsonl.
+Phải upload cả file manifest cùng các phần.
 
 Chạy: python scripts/pack_for_kaggle.py [--out data/kaggle_upload]
 """
@@ -20,22 +22,22 @@ def _gz(lines: list[str]) -> bytes:
     return gzip.compress("".join(lines).encode("utf-8"), compresslevel=9, mtime=0)
 
 
-def split_parts(lines: list[str], limit: int) -> list[bytes]:
+def split_parts(lines: list[str], limit: int) -> list[tuple[bytes, int]]:
     """Cắt `lines` thành các khối gzip, mỗi khối < limit byte (giữ thứ tự dòng).
 
     Số dòng mỗi phần được ước lượng từ 20.000 dòng đầu; phần nào nén xong vẫn vượt limit (vì khó nén hơn
     đoạn đầu) thì được chia đôi tiếp cho tới khi vừa. Một dòng đơn lẻ đã vượt limit -> ValueError.
     """
     if not lines:
-        return [_gz([])]
+        return [(_gz([]), 0)]
     sample = _gz(lines[:20000])
     per = max(1, int(limit * 0.9 / (len(sample) / min(len(lines), 20000))))
-    parts: list[bytes] = []
+    parts: list[tuple[bytes, int]] = []
 
     def add(chunk: list[str]) -> None:
         data = _gz(chunk)
         if len(data) < limit:
-            parts.append(data)
+            parts.append((data, len(chunk)))
         elif len(chunk) == 1:
             raise ValueError(f"một dòng nén còn {len(data)} byte, vượt giới hạn {limit}")
         else:
@@ -49,7 +51,7 @@ def split_parts(lines: list[str], limit: int) -> list[bytes]:
 
 
 def write_parts(lines: list[str], name: str, out: Path, limit: int) -> list[int]:
-    """Ghi các phần `{name}.partNN.jsonl.gz`. Mọi phần được nén và kiểm tra trước; chỉ khi thành công
+    """Ghi các phần `{name}.partNN.jsonl.gz` và manifest `{name}.parts.json`. Mọi phần được nén và kiểm tra trước; chỉ khi thành công
     mới xóa các phần cũ cùng tên (lần trước có thể nhiều phần hơn, phần dư sẽ bị notebook ghép vào)."""
     parts = split_parts(lines, limit)
     if len(parts) > 100:
@@ -59,15 +61,17 @@ def write_parts(lines: list[str], name: str, out: Path, limit: int) -> list[int]
         shutil.rmtree(tmp)
     tmp.mkdir()
     try:
-        for k, data in enumerate(parts):
+        for k, (data, _) in enumerate(parts):
             (tmp / f"{name}.part{k:02d}.jsonl.gz").write_bytes(data)
+        manifest = {"name": name, "n_parts": len(parts), "n_lines": len(lines), "lines": [n for _, n in parts]}
+        (tmp / f"{name}.parts.json").write_text(json.dumps(manifest), encoding="utf-8")
         for old in out.glob(f"{name}.part[0-9][0-9].jsonl.gz"):
             old.unlink()
-        for f in sorted(tmp.iterdir()):
+        for f in sorted(tmp.iterdir(), key=lambda f: f.name.endswith(".parts.json")):  # manifest sau cùng
             os.replace(f, out / f.name)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
-    return [len(d) for d in parts]
+    return [len(d) for d, _ in parts]
 
 
 def main() -> None:

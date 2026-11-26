@@ -337,7 +337,7 @@ Quá trình huấn luyện dự kiến dùng `Seq2SeqTrainer` của thư viện 
 - **Mô hình A, dữ liệu và đánh giá:** máy tính cá nhân chạy Windows 11, chỉ dùng CPU, Python 3.12. Các thư viện chính được ghim phiên bản trong `requirements.txt`: `pyarrow` 26.0.1, `huggingface_hub` 2.1.1, `numpy` 2.4.4, `pandas` 3.0.2, `PyYAML` 6.0.3, `scikit-learn` 1.9.1, `matplotlib` 3.10.8, `pytest` 9.1.1. Phần lõi của mô hình A (LM, sinh ứng viên, giải mã) chỉ dùng thư viện chuẩn của Python, không cần thư viện học máy.
 - **Mô hình C:** GPU trên Kaggle/Colab với `torch`, `transformers`, `datasets`, `accelerate`, `sentencepiece`; phiên bản cụ thể sẽ được ghim sau lần huấn luyện đầu tiên. [chờ BARTpho]
 - **Seed:** 42 cho lấy mẫu Binhvq, chia tập và chia VSEC; 42/43/44 cho sinh nhiễu Syn-train/Syn-val/Syn-test; 42 cho huấn luyện BARTpho. Hàm `set_seed` cố định seed của `random`, `numpy` và `torch`.
-- **Kiểm thử:** bộ test đơn vị trong `tests/` (chuẩn hóa, sinh lỗi, chỉ số đánh giá, LM n-gram, đọc dữ liệu thật, loại trùng, đóng gói, script đánh giá/phân tích) gồm 98 test và đều qua.
+- **Kiểm thử:** bộ test đơn vị trong `tests/` (chuẩn hóa, sinh lỗi, chỉ số đánh giá, LM n-gram, đọc dữ liệu thật, loại trùng, đóng gói, script đánh giá/phân tích) gồm 105 test và đều qua.
 - Toàn bộ quy trình được mô tả trong `README.md`; các thực nghiệm của mô hình A được chạy lại bằng `scripts/run_ngram_experiments.sh`.
 
 ## 4.2. Các tập đánh giá
@@ -576,7 +576,7 @@ Theo yêu cầu của môn học, nhóm công khai việc sử dụng công cụ
 
 - Mọi số liệu trong báo cáo được lấy từ các tệp do mã nguồn sinh ra (`outputs/tables/*.csv`, `data/processed/stats_*.json`, `syn_*.stats.json`) hoặc từ tệp cấu hình; không có số liệu nào do AI tự đặt ra. Các chỗ chưa có số liệu được đánh dấu rõ ([chờ BARTpho], [chờ hình], [cần bổ sung]).
 - Các tập kiểm tra (VSEC-test, Viwiki-test) không được dùng để chỉnh tham số, kể cả khi AI hỗ trợ phân tích kết quả.
-- Mã do AI viết đều kèm test đơn vị (98 test) và được nhóm chạy lại; nhóm chịu trách nhiệm toàn bộ về nội dung và kết quả của bài tập lớn.
+- Mã do AI viết đều kèm test đơn vị (105 test) và được nhóm chạy lại; nhóm chịu trách nhiệm toàn bộ về nội dung và kết quả của bài tập lớn.
 
 # Phụ lục B. Cấu hình chính
 
