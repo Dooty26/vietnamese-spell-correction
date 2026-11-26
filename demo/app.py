@@ -1,8 +1,9 @@
 """Demo Gradio: nhập câu/đoạn văn -> chọn mô hình (n-gram / BARTpho / cả hai) -> tô âm tiết bị sửa + bảng ứng viên.
 
 Chạy (từ thư mục gốc dự án):
-    python -X utf8 demo/app.py                                   # chỉ mô hình A (n-gram)
-    python -X utf8 demo/app.py --bartpho-checkpoint outputs/checkpoints/bartpho/best
+    python -X utf8 demo/app.py                                   # A + C (tự nạp BARTpho nếu có outputs/checkpoints/bartpho/best)
+    python -X utf8 demo/app.py --no-bartpho                      # chỉ mô hình A (n-gram), khởi động nhanh
+    python -X utf8 demo/app.py --bartpho-checkpoint path/to/best # checkpoint BARTpho khác
     python -X utf8 demo/app.py --port 7861 --share               # đổi cổng / tạo link công khai
 Phụ trách: TV3.
 """
@@ -22,7 +23,8 @@ from vspell.eval.align import edit_positions  # noqa: E402
 from vspell.models.ngram_lm import BOS, EOS, lm_token  # noqa: E402
 from vspell.normalize import _TOKEN_RE, normalize  # noqa: E402
 
-DEFAULT_NGRAM_DIR = "D:/Do/NLP/Project_NLP/outputs/checkpoints/ngram/o3_kneser_ney"
+DEFAULT_NGRAM_DIR = str(ROOT / "outputs/checkpoints/ngram/o3_kneser_ney")
+DEFAULT_BARTPHO_DIR = ROOT / "outputs/checkpoints/bartpho/best"
 
 # Mỗi câu một loại lỗi chính; câu cuối kiểm tra tên riêng không bị "sửa" nhầm.
 EXAMPLES = [
@@ -34,6 +36,9 @@ EXAMPLES = [
     ["Sinh vien can nop bai tap truoc ngay mai."],                                  # mất dấu
     ["Ông Nguyễn Văn Thắng đã đến thăm Đà Nẵng và Hội An vào thág trước."],         # tên riêng giữ nguyên, chỉ sửa "thág"
     ["Bài báo nói về kinh tees Việt Nam. Các chuyen gia dự báo tăng trưởng sẽ chậm lại trong năm nay."],  # đoạn văn
+    # So sánh A và C (xem report/phan_tich_A_vs_C.md):
+    ["Pháp luật cần ghi nhận công sức đòng góp của vợ, chồng trong việc tạo lập tài sản chung."],  # sai dấu thanh: A đúng, C bỏ qua
+    ["Học sinh có nhiều cách khác nhau để thực hiện biện phpasp này."],             # sai nhiều ký tự: C đúng, A không có ứng viên
 ]
 
 COLOR_MAP = {"sửa": "#f59e0b", "n-gram": "#f59e0b", "BARTpho": "#8b5cf6"}
@@ -205,7 +210,9 @@ def build_app(ngram, bartpho):
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--bartpho-checkpoint", default=None)
+    ap.add_argument("--bartpho-checkpoint", default=None,
+                    help=f"mặc định {DEFAULT_BARTPHO_DIR.relative_to(ROOT)} nếu thư mục đó có model.safetensors")
+    ap.add_argument("--no-bartpho", action="store_true", help="không nạp BARTpho (chỉ n-gram)")
     ap.add_argument("--ngram-dir", default=DEFAULT_NGRAM_DIR)
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=7860)
@@ -216,9 +223,15 @@ def main() -> None:
     ngram = load_ngram(args.ngram_dir)
     print(f"Đã nạp n-gram từ {args.ngram_dir} ({time.perf_counter() - t0:.1f}s)")
     bartpho = None
-    if args.bartpho_checkpoint:
-        bartpho = load_bartpho(args.bartpho_checkpoint)
-        print(f"Đã nạp BARTpho từ {args.bartpho_checkpoint}")
+    ckpt = args.bartpho_checkpoint
+    if ckpt is None and (DEFAULT_BARTPHO_DIR / "model.safetensors").exists():
+        ckpt = str(DEFAULT_BARTPHO_DIR)
+    if ckpt and not args.no_bartpho:
+        t0 = time.perf_counter()
+        bartpho = load_bartpho(ckpt)
+        print(f"Đã nạp BARTpho từ {ckpt} trên {bartpho.device} ({time.perf_counter() - t0:.1f}s)")
+    elif not args.no_bartpho:
+        print(f"Không thấy checkpoint BARTpho ({DEFAULT_BARTPHO_DIR}): chỉ chạy n-gram")
     build_app(ngram, bartpho).launch(server_name=args.host, server_port=args.port, share=args.share)
 
 

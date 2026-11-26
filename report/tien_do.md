@@ -94,7 +94,7 @@ Ký hiệu: 🤖 Claude làm được trên máy này · 🧑 cần người ch�
 - Chạy lại `analyze_errors.py` có thêm C.
 - Chọn 5–10 ví dụ cuối cùng: A đúng C sai, C đúng A sai, cả hai sai. Kèm phân tích từng ví dụ.
 
-**S6b. Gắn BARTpho vào demo** 🤖 hoặc 🧑 ⏱ ½ phiên. Nếu máy không có GPU, chạy demo trên Kaggle/Colab và dùng `share=True`.
+**S6b. Gắn BARTpho vào demo** ✅ *(26/11: checkpoint v3 tải từ Kaggle Output về outputs/checkpoints/bartpho/best, chạy CPU khớp 20/20 dự đoán Kaggle; demo tự nạp BARTpho, thêm 2 câu so sánh A và C)* 🤖 ⏱ ½ phiên. Nếu máy không có GPU, chạy demo trên Kaggle/Colab và dùng `share=True`.
 
 **S7b. Hoàn thiện báo cáo** 🤖 + 🧑 ⏱ 1–2 phiên
 - Viết mục 5 Kết quả (bảng chính, các ablation, ví dụ lỗi) và mục 6 Kết luận.

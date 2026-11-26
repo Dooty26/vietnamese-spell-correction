@@ -66,18 +66,30 @@ Lưu ý: `errors_per_word` trong `.stats.json` thấp hơn tham số (~0,83×) v
 ## Demo
 Ứng dụng Gradio trong `demo/app.py` (cần `pip install gradio`). Chạy từ thư mục gốc dự án:
 ```bash
-python -X utf8 demo/app.py                                                    # chỉ mô hình A (n-gram)
-python -X utf8 demo/app.py --bartpho-checkpoint outputs/checkpoints/bartpho/best   # thêm BARTpho, chọn được "Cả hai"
+python -X utf8 demo/app.py                    # A + C: tự nạp BARTpho nếu có outputs/checkpoints/bartpho/best
+python -X utf8 demo/app.py --no-bartpho       # chỉ mô hình A (n-gram), khởi động nhanh
 ```
-Mở http://127.0.0.1:7860. Các tham số: `--ngram-dir` (mặc định `D:/Do/NLP/Project_NLP/outputs/checkpoints/ngram/o3_kneser_ney`, thư mục chứa `lm.pkl`, `lexicon.json`, `config.json`), `--port`, `--host`, `--share`.
+Mở http://127.0.0.1:7860. Các tham số:
+- `--ngram-dir`: mặc định `outputs/checkpoints/ngram/o3_kneser_ney`, thư mục chứa `lm.pkl`, `lexicon.json`, `config.json`;
+- `--bartpho-checkpoint`: mặc định `outputs/checkpoints/bartpho/best`;
+- `--port`, `--host`, `--share`.
+
+**Checkpoint BARTpho** (khoảng 1,6 GB, không nằm trong git) nằm ở *Output* của notebook Kaggle, trong `repo/outputs/checkpoints/bartpho/best/`. Chỉ cần tải `model.safetensors` về thư mục trên. Các file tokenizer/config giống hệt `vinai/bartpho-syllable` và có thể chép từ bất kỳ checkpoint nào do `scripts/train_bartpho.py` tạo ra.
+
+**Chạy được trên CPU:**
+- nạp mô hình khoảng 15 giây;
+- mỗi câu khoảng 0,3–1 giây với beam 4;
+- có GPU CUDA thì tự chạy fp16.
 
 Chức năng:
 - nhập một câu hoặc cả đoạn văn (tự tách câu);
-- chọn mô hình: n-gram, BARTpho, hoặc cả hai đặt cạnh nhau (BARTpho chỉ hiện khi có `--bartpho-checkpoint`);
+- chọn mô hình: n-gram, BARTpho, hoặc cả hai đặt cạnh nhau;
 - tô các âm tiết bị sửa theo dạng `sai → đúng`, kèm câu đã sửa;
 - với mô hình A, bảng ứng viên cho từng âm tiết bị sửa: nguồn ứng viên (telex, skeleton, confusion, teencode, edit1/2), điểm kênh, điểm LM cục bộ và tổng (log10);
 - thời gian xử lý của từng mô hình;
-- 8 câu ví dụ có sẵn: Telex chưa chuyển, lỗi vùng miền (dấu hỏi/ngã, l/n), trượt phím, teencode, mất dấu, câu có tên riêng (không bị sửa), đoạn văn hai câu.
+- 10 câu ví dụ có sẵn:
+  - 8 câu theo từng loại lỗi: Telex chưa chuyển, lỗi vùng miền (dấu hỏi/ngã, l/n), trượt phím, teencode, mất dấu, câu có tên riêng (không bị sửa), đoạn văn hai câu;
+  - 2 câu so sánh A và C: sai dấu thanh `đòng góp` (A sửa, C bỏ qua) và sai nhiều ký tự `biện phpasp` (C sửa, A không có ứng viên).
 
 ## Đánh giá
 Detection P/R/F1 và Correction P/R/F1 mức âm tiết, sentence accuracy, tỉ lệ sửa quá tay. Chạy trên Syn-test, VSEC-test, Viwiki-test. Mọi kết quả cố định seed 42.
