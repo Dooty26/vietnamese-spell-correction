@@ -1,6 +1,6 @@
 # Tiến độ & danh sách task theo phiên làm việc
 
-*Cập nhật: 25/11/2026. Dự án bắt đầu 12/11; từ 12/11 đến nay chưa có thay đổi mới trong thư mục dự án.*
+*Cập nhật: 26/11/2026. Dự án bắt đầu 12/11.*
 
 ## 1. Đã xong
 
@@ -16,18 +16,18 @@
 | Ablation A | Bậc 2/3/4 × Laplace/KN; perplexity | `outputs/tables/ngram_perplexity.csv` |
 | Test | 65 test pass | `tests/` |
 
-**Phát hiện mới (S5a):** sửa quá tay trên Viwiki chủ yếu do lỗi thật quá ít (0,29%): tỉ lệ sửa quá tay trên token sạch 0,48% (VSEC 0,33%), nhưng bằng 1,64× số lỗi thật. 45% là từ thường, 35% ngoài từ điển (manga→mang), 21% tên riêng. Nghi chuẩn hóa chưa gộp biến thể i/y (`kỉ→kỷ` 15 lần), cần kiểm tra.
+**Phát hiện mới (S5a):** sửa quá tay trên Viwiki chủ yếu do lỗi thật quá ít (0,29%): tỉ lệ sửa quá tay trên token sạch 0,48% (VSEC 0,33%), nhưng bằng 1,64× số lỗi thật. 45% là từ thường, 35% ngoài từ điển (manga→mang), 21% tên riêng. Nghi chuẩn hóa chưa gộp biến thể i/y (`kỉ→kỷ` 15 lần). *26/11 đã kiểm tra:* đúng là do A đổi i→y (lí→lý, kì→kỳ, kĩ→kỹ, kỉ→kỷ, Mĩ→Mỹ), chiếm 54/783 ca sửa quá tay của A trên VSEC và 51/2526 trên Viwiki; BARTpho gần như không mắc. Ảnh hưởng nhỏ (precision của A tăng khoảng 0,5 điểm nếu sửa).
 
 ## 2. Chưa xong (so với yêu cầu bài tập lớn)
 
 - [x] **Mô hình C (BARTpho)**: v3 xong 26/11 (Kaggle 2×T4, 5,6 giờ). VSEC cor_f1 0,536, over-correction 0,026; Syn-test cor_f1 0,959; Viwiki cor_f1 0,240.
 - [x] Ablation C (mật độ nhiễu 5/12/25%, 50k cặp × 1 epoch, Colab): VSEC cor_f1 0,572 / 0,622 / 0,624. Cả 3 đều cao hơn mô hình đầy đủ (150k × 3 epoch, 0,536) → train lâu trên dữ liệu tổng hợp làm giảm khả năng chuyển sang lỗi thật (recall 0,38 so với 0,48).
-- [ ] Bảng so sánh A vs C
-- [~] Ví dụ lỗi và hình cho A đã có (chọn bản cuối A vs C: S5b)
-- [x] Demo Gradio với A (còn gắn BARTpho: S6b)
+- [x] Bảng so sánh A vs C (`main_results.csv`, `model_comparison.csv`, `ab_recall_by_kind.csv`)
+- [x] Ví dụ lỗi và hình A vs C (S5b: `report/phan_tich_A_vs_C.md`, ví dụ 15–23)
+- [x] Demo Gradio với A và C (S6b)
 - [ ] Báo cáo PDF 20–30 trang (mới có dàn ý)
-- [ ] README tái lập đầy đủ; ghim phiên bản `requirements.txt` (bỏ dòng `kenlm`, vì không còn dùng)
-- [~] Git: đã có repo cục bộ, **chưa push GitHub** (cần trước S2 vì notebook clone repo)
+- [~] README tái lập: đã có các bước và mục demo; `requirements.txt` đã bỏ `kenlm`. Còn: rà lại từ đầu theo README trên clone sạch (S9)
+- [x] Git: đã push GitHub (Dooty26/vietnamese-spell-correction)
 - [ ] Slide và demo 10 phút
 - [ ] (Tùy chọn) Mô hình B (BiLSTM); giảm sửa quá tay của A trên Viwiki
 
