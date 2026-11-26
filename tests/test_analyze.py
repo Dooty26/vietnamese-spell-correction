@@ -105,3 +105,29 @@ def test_missing_lexicon_is_rejected(tmp_path):
     # có từ điển thì "học" là từ thường, không phải "ngoài từ điển"
     assert ("sua_qua_tay", "tu_thuong") in {(x["cat"], x["sub"]) for x in
                                             ae.classify_sentence("tôi học", "tôi hỏi", "tôi học", {"tôi", "học"})}
+
+
+def test_eda_without_data_fails_before_writing(tmp_path):
+    import pytest
+
+    fig, tab = tmp_path / "fig", tmp_path / "tab"
+    with pytest.raises(FileNotFoundError, match="prepare_data"):
+        ae.run_eda(tmp_path / "data", fig, tab, n_train=10)
+    assert not fig.exists() and not tab.exists()
+
+
+def test_eda_skips_empty_sets(tmp_path):
+    import json
+
+    import pytest
+
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "vsec_test.jsonl").write_text("", encoding="utf-8")
+    with pytest.raises(FileNotFoundError, match="rỗng"):
+        ae.load_eda_sets(data, n_train=10)
+    rec = {"id": "a", "src": "đều chỉnh", "tgt": "điều chỉnh"}
+    (data / "syn_test.jsonl").write_text(json.dumps(rec, ensure_ascii=False) + "\n", encoding="utf-8")
+    assert set(ae.load_eda_sets(data, n_train=10)) == {"syn_test"}
+    ae.run_eda(data, tmp_path / "fig", tmp_path / "tab", n_train=10)  # một tập còn lại: chạy hết không lỗi
+    assert (tmp_path / "tab" / "eda_summary.csv").exists()

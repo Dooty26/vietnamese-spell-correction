@@ -343,7 +343,7 @@ Huấn luyện dùng `Seq2SeqTrainer` của Hugging Face Transformers trên GPU 
 - **Mô hình A, dữ liệu và đánh giá:** máy tính cá nhân chạy Windows 11, chỉ dùng CPU, Python 3.12. Các thư viện chính được ghim phiên bản trong `requirements.txt`: `pyarrow` 26.0.1, `huggingface_hub` 2.1.1, `numpy` 2.4.4, `pandas` 3.0.2, `PyYAML` 6.0.3, `scikit-learn` 1.9.1, `matplotlib` 3.10.8, `pytest` 9.1.1. Phần lõi của mô hình A (LM, sinh ứng viên, giải mã) chỉ dùng thư viện chuẩn của Python, không cần thư viện học máy.
 - **Mô hình C:** GPU trên Kaggle với `torch`, `transformers` (≥ 4.56; đã chạy 5.24.1), `datasets`, `accelerate`, `sentencepiece`. Notebook ghi danh sách phiên bản thực tế vào `bartpho_pip_freeze.txt` trong thư mục output của Kaggle. Dự đoán trên Viwiki và các phép chấm chạy lại trên CPU của máy cá nhân.
 - **Seed:** 42 cho lấy mẫu Binhvq, chia tập và chia VSEC; 42/43/44 cho sinh nhiễu Syn-train/Syn-val/Syn-test; 42 cho huấn luyện BARTpho. Hàm `set_seed` cố định seed của `random`, `numpy` và `torch`.
-- **Kiểm thử:** bộ test đơn vị trong `tests/` (chuẩn hóa, sinh lỗi, chỉ số đánh giá, LM n-gram, đọc dữ liệu thật, loại trùng, đóng gói, script đánh giá/phân tích) gồm 110 test và đều qua.
+- **Kiểm thử:** bộ test đơn vị trong `tests/` (chuẩn hóa, sinh lỗi, chỉ số đánh giá, LM n-gram, đọc dữ liệu thật, loại trùng, đóng gói, script đánh giá/phân tích) gồm 113 test và đều qua.
 - Toàn bộ quy trình được mô tả trong `README.md`; các thực nghiệm của mô hình A được chạy lại bằng `scripts/run_ngram_experiments.sh`.
 
 ## 4.2. Các tập đánh giá
@@ -387,7 +387,7 @@ Các chỉ số được tính ở mức vi mô (micro) trên toàn tập. Mọi
 - **Mô hình A:** cấu trúc mô hình (bậc 3, Kneser-Ney, $D = 0{,}75$, beam 5, chi phí các nguồn ứng viên) được đặt theo kinh nghiệm. Hai tham số ảnh hưởng mạnh nhất đến cân bằng precision/recall là `oov_penalty` và `real_word_penalty` được chỉnh bằng tìm kiếm lưới trên 400 câu đầu của VSEC-dev (`scripts/train_ngram.py --tune`), chọn cặp có Correction F1 cao nhất. Lưới cuối cùng trong `configs/ngram.yaml` là `oov_penalty` ∈ {−0,5; −1,0; −1,5; −3,0} × `real_word_penalty` ∈ {−0,5; −1,0; −1,5; −2,0; −3,0}; giá trị được chọn là (−0,5; −1,5). Các mô hình trong ablation dùng chung tham số giải mã này, không chỉnh lại riêng.
 - **Mô hình A + S4 (luật giảm sửa quá tay, mục 5.5):** bốn tham số của các luật được dò bằng lưới 2 × 2 × 4 × 5 = 80 cấu hình trên **toàn bộ 1.873 câu VSEC-dev** (`scripts/tune_ngram_s4.py`), giữ nguyên các tham số giải mã khác. Tiêu chí chọn là Correction F0.5 (trọng số precision gấp đôi recall) thay vì F1: trên văn bản thật, phần lớn câu không có lỗi nên một lần sửa nhầm gây hại nhiều hơn một lỗi bị bỏ sót. Tiêu chí F0.5 được đặt ra trước khi xem kết quả của S4 trên tập kiểm tra; tuy vậy bản thân các luật S4 được thiết kế sau khi phân tích lỗi của A trên Viwiki-test (xem lưu ý ở mục 5.5).
 - **Mô hình C:** chọn checkpoint theo `eval_loss` trên Syn-val; không dùng VSEC-dev hay các tập lỗi thật để huấn luyện hoặc chọn checkpoint.
-- **Viwiki-test** không được dùng cho bất kỳ quyết định nào; **VSEC-test** chỉ dùng để báo cáo.
+- **Tập kiểm tra:** không tham số số nào được chọn trên VSEC-test hay Viwiki-test, và mô hình A, C v3 cùng các ablation mật độ nhiễu được thiết kế trước khi xem kết quả trên hai tập này. Riêng hai thí nghiệm phát triển sau đó chịu ảnh hưởng của tập kiểm tra: các luật S4 được thiết kế từ phân tích sửa quá tay của A trên Viwiki-test (tham số của chúng vẫn chọn trên VSEC-dev), và tỉ lệ lỗi dấu thanh/dấu phụ của v4 được đặt theo phân bố lỗi của VSEC-test. Kết quả của A + S4 và C v4 vì vậy là kết quả phát triển, chưa phải kiểm chứng độc lập (mục 5.5).
 
 ## 4.5. Thí nghiệm ablation
 
@@ -673,8 +673,8 @@ Theo yêu cầu của môn học, nhóm công khai việc sử dụng công cụ
 **Nguyên tắc nhóm áp dụng:**
 
 - Mọi số liệu trong báo cáo được lấy từ các tệp do mã nguồn sinh ra (`outputs/tables/*.csv`, `data/processed/stats_*.json`, `syn_*.stats.json`) hoặc từ tệp cấu hình; không có số liệu nào do AI tự đặt ra. Các chỗ chưa có số liệu được đánh dấu rõ ([cần bổ sung]).
-- Các tập kiểm tra (VSEC-test, Viwiki-test) không được dùng để chỉnh tham số, kể cả khi AI hỗ trợ phân tích kết quả.
-- Mã do AI viết đều kèm test đơn vị (110 test) và được nhóm chạy lại; nhóm chịu trách nhiệm toàn bộ về nội dung và kết quả của bài tập lớn.
+- Không tham số số nào được chọn trên các tập kiểm tra (VSEC-test, Viwiki-test); tham số giải mã của A và S4 được chọn trên VSEC-dev, checkpoint của C theo Syn-val. Tuy vậy, thiết kế của luật S4 (từ phân tích lỗi trên Viwiki-test) và tỉ lệ nhiễu của v4 (theo phân bố lỗi VSEC-test) đã chịu ảnh hưởng của tập kiểm tra, kể cả qua các phân tích có AI hỗ trợ; kết quả của A + S4 và C v4 được trình bày là kết quả phát triển, chưa phải kiểm chứng độc lập (mục 4.4 và 5.5).
+- Mã do AI viết đều kèm test đơn vị (113 test) và được nhóm chạy lại; nhóm chịu trách nhiệm toàn bộ về nội dung và kết quả của bài tập lớn.
 
 # Phụ lục B. Cấu hình chính
 

@@ -177,13 +177,16 @@ def real_error_kind(wrong: str, right: str) -> str:
     return "Sai ≥2 ký tự"
 
 
-def run_eda(data_dir: Path, fig_dir: Path, tab_dir: Path, n_train: int) -> None:
-    plt = _plt()
+def load_eda_sets(data_dir: Path, n_train: int) -> dict[str, list[dict]]:
+    """Đọc các tập cho EDA; bỏ (có cảnh báo) tập không có hoặc rỗng. Không còn tập nào -> FileNotFoundError,
+    báo trước khi ghi bất kỳ bảng/hình nào."""
     sets: dict[str, list[dict]] = {}
     for ds in DATASETS:
         p = data_dir / f"{ds}.jsonl"
         if p.exists():
             sets[ds] = list(read_jsonl(p))
+        else:
+            log.warning("EDA: không có %s, bỏ qua", p)
     train_p = data_dir / "syn_train.jsonl"
     if train_p.exists() and n_train > 0:
         recs = []
@@ -192,6 +195,20 @@ def run_eda(data_dir: Path, fig_dir: Path, tab_dir: Path, n_train: int) -> None:
             if len(recs) >= n_train:
                 break
         sets["syn_train"] = recs
+    for ds in [d for d, recs in sets.items() if not recs]:
+        log.warning("EDA: %s rỗng, bỏ qua", data_dir / f"{ds}.jsonl")
+        del sets[ds]
+    if not sets:
+        raise FileNotFoundError(
+            f"EDA: không có tập dữ liệu nào (hoặc đều rỗng) trong {data_dir}. Chạy scripts/prepare_data.py và "
+            "scripts/gen_noise.py (notebooks/02_data.ipynb), hoặc giải nén data_processed.zip vào data/processed/, "
+            "hoặc chỉ đường dẫn bằng --data-dir.")
+    return sets
+
+
+def run_eda(data_dir: Path, fig_dir: Path, tab_dir: Path, n_train: int) -> None:
+    sets = load_eda_sets(data_dir, n_train)
+    plt = _plt()
     lengths, n_err, kinds, summary = {}, {}, {}, []
     for ds, recs in sets.items():
         L, E, K = [], [], Counter()

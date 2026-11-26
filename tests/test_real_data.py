@@ -112,3 +112,23 @@ def test_interrupted_download_leaves_no_file(tmp_path, monkeypatch):
     monkeypatch.setattr(urllib.request, "urlretrieve", ok)
     assert download_vsec(dest, url="http://x").read_text(encoding="utf-8") == '{"text": "đủ"}\n'
     assert len(calls) == 1
+
+
+def test_vsec_missing_correction_is_not_treated_as_correct(tmp_path):
+    import json
+
+    import pytest
+
+    from vspell.data.vsec import MissingCorrection, load_vsec
+
+    bad = _ann([("Tôi", None), ("lổi", None)])
+    bad["annotations"][1]["is_correct"] = False  # đánh dấu sai nhưng alternative_syllables = []
+    with pytest.raises(MissingCorrection, match="không có gợi ý sửa"):
+        parse_vsec_record(bad, 0)
+    good = _ann([("đều", "điều"), ("chỉnh", None)])
+    path = tmp_path / "VSEC.jsonl"
+    path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in [good, bad, good]), encoding="utf-8")
+    stats = {}
+    recs = load_vsec(path, stats=stats)
+    assert [r["id"] for r in recs] == ["vsec-0", "vsec-2"]  # id theo số dòng, câu bị loại không làm lệch id
+    assert stats == {"dropped_missing_correction": 1, "missing_correction_annotations": 1}

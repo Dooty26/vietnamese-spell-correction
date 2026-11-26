@@ -52,12 +52,24 @@ def _repair_lost_merges(tokens: list[str], fixes: list[str | None]) -> int:
     return repaired
 
 
+class MissingCorrection(ValueError):
+    """Annotation đánh dấu sai (is_correct=False) nhưng không có alternative_syllables nào."""
+
+
 def parse_vsec_record(raw: dict, idx: int) -> dict:
-    """Một dòng VSEC -> {"id", "src", "tgt", "dataset", "alternatives", "n_repaired"}."""
+    """Một dòng VSEC -> {"id", "src", "tgt", "dataset", "alternatives", "n_repaired"}.
+
+    Annotation sai mà không có gợi ý sửa -> MissingCorrection: không biết câu đích nên không thể coi
+    âm tiết đó là đúng (sẽ đếm thiếu lỗi và biến câu lỗi thành câu sạch).
+    """
     anns = raw["annotations"]
+    missing = [i for i, a in enumerate(anns) if not a["is_correct"] and not a["alternative_syllables"]]
+    if missing:
+        raise MissingCorrection(f"vsec-{idx}: {len(missing)} âm tiết bị đánh dấu sai nhưng không có gợi ý sửa "
+                                f"(vị trí {missing})")
     tokens = [a["current_syllable"] for a in anns]
     fixes: list[str | None] = [
-        None if a["is_correct"] else (a["alternative_syllables"][0].strip() if a["alternative_syllables"] else None)
+        None if a["is_correct"] else a["alternative_syllables"][0].strip()
         for a in anns
     ]
     n_repaired = _repair_lost_merges(tokens, fixes)
@@ -77,13 +89,26 @@ def parse_vsec_record(raw: dict, idx: int) -> dict:
     }
 
 
-def load_vsec(source: str | Path) -> list[dict]:
-    """Đọc VSEC.jsonl (định dạng GitHub gốc) -> [{"id", "src", "tgt", "dataset": "vsec", ...}]."""
-    records = []
+def load_vsec(source: str | Path, stats: dict | None = None) -> list[dict]:
+    """Đọc VSEC.jsonl (định dạng GitHub gốc) -> [{"id", "src", "tgt", "dataset": "vsec", ...}].
+
+    Câu có annotation sai mà thiếu gợi ý sửa bị loại cả câu (id các câu khác giữ nguyên theo số dòng);
+    `stats` (nếu truyền) nhận "dropped_missing_correction" (số câu) và "missing_correction_annotations".
+    """
+    records, n_drop, n_ann = [], 0, 0
     with open(source, encoding="utf-8") as f:
         for idx, line in enumerate(f):
-            if line.strip():
-                records.append(parse_vsec_record(json.loads(line), idx))
+            if not line.strip():
+                continue
+            raw = json.loads(line)
+            try:
+                records.append(parse_vsec_record(raw, idx))
+            except MissingCorrection:
+                n_drop += 1
+                n_ann += sum(1 for a in raw["annotations"] if not a["is_correct"] and not a["alternative_syllables"])
+    if stats is not None:
+        stats["dropped_missing_correction"] = n_drop
+        stats["missing_correction_annotations"] = n_ann
     return records
 
 
