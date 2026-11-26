@@ -83,3 +83,32 @@ def test_split_dev_test_keeps_same_target_together():
     norm = lambda r: target_key(r["tgt"])  # noqa: E731
     assert not {norm(r) for r in dev} & {norm(r) for r in test}
     assert len(dev) + len(test) == len(recs) and dev and test
+
+
+def test_interrupted_download_leaves_no_file(tmp_path, monkeypatch):
+    import urllib.request
+    from pathlib import Path
+
+    import pytest
+
+    from vspell.data.vsec import download_vsec
+
+    dest = tmp_path / "VSEC.jsonl"
+    calls = []
+
+    def broken(url, path):
+        calls.append(path)
+        Path(path).write_text('{"text": "dở', encoding="utf-8")
+        raise urllib.error.ContentTooShortError("ngắt giữa chừng", None)
+
+    monkeypatch.setattr(urllib.request, "urlretrieve", broken)
+    with pytest.raises(urllib.error.ContentTooShortError):
+        download_vsec(dest, url="http://x")
+    assert not dest.exists() and not list(tmp_path.iterdir())
+
+    def ok(url, path):
+        Path(path).write_text('{"text": "đủ"}\n', encoding="utf-8")
+
+    monkeypatch.setattr(urllib.request, "urlretrieve", ok)
+    assert download_vsec(dest, url="http://x").read_text(encoding="utf-8") == '{"text": "đủ"}\n'
+    assert len(calls) == 1

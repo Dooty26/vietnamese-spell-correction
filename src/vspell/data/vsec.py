@@ -15,21 +15,17 @@ from __future__ import annotations
 import json
 import random
 import re
-import urllib.request
 from pathlib import Path
 
 from vspell.normalize import is_vietnamese_syllable, normalize
+from vspell.utils import download_atomic
 
 VSEC_URL = "https://raw.githubusercontent.com/VSEC2021/VSEC/main/Dataset/VSEC.jsonl"
 
 
 def download_vsec(dest: str | Path, url: str = VSEC_URL) -> Path:
-    """Tải VSEC.jsonl nếu chưa có."""
-    dest = Path(dest)
-    if not dest.exists():
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        urllib.request.urlretrieve(url, dest)
-    return dest
+    """Tải VSEC.jsonl nếu chưa có (qua file tạm, xem download_atomic)."""
+    return download_atomic(url, dest)
 
 
 def _repair_lost_merges(tokens: list[str], fixes: list[str | None]) -> int:

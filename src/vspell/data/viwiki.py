@@ -11,10 +11,10 @@ from __future__ import annotations
 
 import json
 import re
-import urllib.request
 from pathlib import Path
 
 from vspell.normalize import normalize, split_syllables
+from vspell.utils import download_atomic
 
 VIWIKI_URL = "https://raw.githubusercontent.com/heraclex12/Viwiki-spelling/main/spelling_test.json"
 
@@ -46,12 +46,8 @@ def _is_sentence_end(line: str, m: re.Match) -> bool:
 
 
 def download_viwiki(dest: str | Path, url: str = VIWIKI_URL) -> Path:
-    """Tải spelling_test.json nếu chưa có."""
-    dest = Path(dest)
-    if not dest.exists():
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        urllib.request.urlretrieve(url, dest)
-    return dest
+    """Tải spelling_test.json nếu chưa có (qua file tạm, xem download_atomic)."""
+    return download_atomic(url, dest)
 
 
 def sentence_spans(text: str, legacy: bool = False) -> list[tuple[int, int]]:

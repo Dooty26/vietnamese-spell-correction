@@ -9,26 +9,65 @@ import argparse
 import gzip
 import json
 import os
+import shutil
 from pathlib import Path
 
 TRAIN = ["syn_train", "syn_train_d05", "syn_train_d12", "syn_train_d25", "syn_train_v4"]
 EVAL = ["syn_val", "syn_test", "vsec_test", "viwiki_test"]
 
 
-def write_parts(lines: list[str], name: str, out: Path, limit: int) -> list[int]:
-    # Xóa các phần cũ cùng tên trước: lần trước có thể cắt thành nhiều phần hơn, phần dư sẽ bị notebook ghép vào.
-    for old in out.glob(f"{name}.part[0-9][0-9].jsonl.gz"):
-        old.unlink()
-    sample = gzip.compress("".join(lines[:20000]).encode(), 9)
+def _gz(lines: list[str]) -> bytes:
+    return gzip.compress("".join(lines).encode("utf-8"), compresslevel=9, mtime=0)
+
+
+def split_parts(lines: list[str], limit: int) -> list[bytes]:
+    """Cắt `lines` thành các khối gzip, mỗi khối < limit byte (giữ thứ tự dòng).
+
+    Số dòng mỗi phần được ước lượng từ 20.000 dòng đầu; phần nào nén xong vẫn vượt limit (vì khó nén hơn
+    đoạn đầu) thì được chia đôi tiếp cho tới khi vừa. Một dòng đơn lẻ đã vượt limit -> ValueError.
+    """
+    if not lines:
+        return [_gz([])]
+    sample = _gz(lines[:20000])
     per = max(1, int(limit * 0.9 / (len(sample) / min(len(lines), 20000))))
-    sizes = []
+    parts: list[bytes] = []
+
+    def add(chunk: list[str]) -> None:
+        data = _gz(chunk)
+        if len(data) < limit:
+            parts.append(data)
+        elif len(chunk) == 1:
+            raise ValueError(f"một dòng nén còn {len(data)} byte, vượt giới hạn {limit}")
+        else:
+            mid = len(chunk) // 2
+            add(chunk[:mid])
+            add(chunk[mid:])
+
     for i in range(0, len(lines), per):
-        p = out / f"{name}.part{i // per:02d}.jsonl.gz"
-        with gzip.open(p, "wt", encoding="utf-8", compresslevel=9) as f:
-            f.writelines(lines[i:i + per])
-        sizes.append(p.stat().st_size)
-        assert sizes[-1] < limit, f"{p} vượt {limit} byte"
-    return sizes
+        add(lines[i:i + per])
+    return parts
+
+
+def write_parts(lines: list[str], name: str, out: Path, limit: int) -> list[int]:
+    """Ghi các phần `{name}.partNN.jsonl.gz`. Mọi phần được nén và kiểm tra trước; chỉ khi thành công
+    mới xóa các phần cũ cùng tên (lần trước có thể nhiều phần hơn, phần dư sẽ bị notebook ghép vào)."""
+    parts = split_parts(lines, limit)
+    if len(parts) > 100:
+        raise ValueError(f"{name}: {len(parts)} phần, vượt quá 2 chữ số partNN")
+    tmp = out / f".{name}.packing"
+    if tmp.exists():
+        shutil.rmtree(tmp)
+    tmp.mkdir()
+    try:
+        for k, data in enumerate(parts):
+            (tmp / f"{name}.part{k:02d}.jsonl.gz").write_bytes(data)
+        for old in out.glob(f"{name}.part[0-9][0-9].jsonl.gz"):
+            old.unlink()
+        for f in sorted(tmp.iterdir()):
+            os.replace(f, out / f.name)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    return [len(d) for d in parts]
 
 
 def main() -> None:

@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import random
+import urllib.request
 from pathlib import Path
 from typing import Iterable, Iterator
 
@@ -53,3 +55,19 @@ def write_jsonl(records: Iterable[dict], path: str | Path) -> int:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
             n += 1
     return n
+
+
+def download_atomic(url: str, dest: str | Path) -> Path:
+    """Tải `url` về `dest` nếu chưa có. Tải vào file tạm cùng thư mục rồi mới đổi tên, nên lần tải bị ngắt
+    không để lại `dest` dở dang (lần chạy sau sẽ tải lại thay vì đọc file hỏng)."""
+    dest = Path(dest)
+    if dest.exists():
+        return dest
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_name(dest.name + ".part")
+    try:
+        urllib.request.urlretrieve(url, tmp)  # ContentTooShortError nếu thiếu byte so với Content-Length
+        os.replace(tmp, dest)
+    finally:
+        tmp.unlink(missing_ok=True)
+    return dest
