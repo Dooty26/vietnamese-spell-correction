@@ -43,7 +43,7 @@ Correction F1 mức âm tiết (`outputs/tables/main_results.csv`; phân tích: 
 Ablation: A theo bậc n-gram × smoothing (`ngram_perplexity.csv`); C theo mật độ nhiễu 5/12/25% (`ablation_noise_density.csv`) và loại lỗi sinh nhiễu (v4 so với d12).
 
 ## Tải sẵn dữ liệu và checkpoint
-Thư mục Google Drive: **DRIVE_LINK**. Giải nén vào thư mục gốc dự án (mỗi zip đã chứa đường dẫn đích):
+Thư mục Google Drive: **https://drive.google.com/drive/folders/1SzZFf1O27hRdtra8mAgOjdCdB9pcwHlQ**. Giải nén vào thư mục gốc dự án (mỗi zip đã chứa đường dẫn đích):
 
 | File | Nội dung | Giải nén ra |
 |---|---|---|
